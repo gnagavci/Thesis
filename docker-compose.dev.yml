@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mysql:
+    ports:
+      - "3307:3306"  # Different port to avoid conflicts
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    command: npm run dev
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      NODE_ENV: development
+
+  frontend:
+    build:
+      context: ./frontend/thesis
+      dockerfile: Dockerfile.dev
+    command: npm run dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/thesis:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true

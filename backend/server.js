@@ -20,6 +20,11 @@ app.get("/api/protected", authenticateToken, (req, res) => {
   res.json({ message: "Access granted", user: req.user });
 });
 
+// Add this before your listen statement
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
