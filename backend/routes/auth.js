@@ -25,7 +25,7 @@ router.post("/register", async (req, res) => {
 
     // Check if user exists
     const [existing] = await db.execute(
-      "SELECT id FROM Users WHERE username = ?",
+      "SELECT id FROM users WHERE username = ?",
       [username]
     );
 
@@ -38,7 +38,7 @@ router.post("/register", async (req, res) => {
 
     // Insert user
     const [result] = await db.execute(
-      "INSERT INTO Users (username, password) VALUES (?, ?)",
+      "INSERT INTO users (username, password) VALUES (?, ?)",
       [username, hashedPassword]
     );
 
@@ -66,7 +66,7 @@ router.post("/login", async (req, res) => {
 
     // Find user
     const [users] = await db.execute(
-      "SELECT id, username, password FROM Users WHERE username = ?",
+      "SELECT id, username, password FROM users WHERE username = ?",
       [username]
     );
 
