@@ -49,3 +49,13 @@ CREATE TABLE simulations (
 INSERT INTO users (username, password, createdAt) VALUES
   ('testuser', '$2b$10$sHNnIbthxX4lHHoaN7eJoOWpT2NEVq5F22QIrp48K7EJ56DfZUe4O', '2025-07-08 09:00:29'),
   ('admin123', '$2b$10$hwMLIibKKwSaLQTpIw0querCwJS9eR4xHxgJtFE7q1ftv7UfKXAH.', '2025-07-16 12:22:27');
+
+
+-- Initial simulation data
+INSERT INTO simulations (userId, title, status, mode, substrate, duration, decayRate, divisionRate, x, y, z, tumorCount, tumorMovement, immuneCount, immuneMovement, stemCount, stemMovement, fibroblastCount, fibroblastMovement, drugCarrierCount, drugCarrierMovement, result) VALUES
+  (1, 'Completed Cancer Simulation', 'Done', '3D', 'Glucose',120, 0.15, 0.25, 100, 100, 50, 500,'Random', 200, 'Directed', 50, 'None', 100, 'Collective', 25, 'Flow', NULL),
+  (1, 'Active Tumor Growth Study', 'Running', '2D', 'Oxygen', 60, 0.10, 0.20, 50, 50, NULL, 250, 'Collective', 150, 'Random', 0, NULL, 0, NULL, 0, NULL, NULL),
+  (1, 'Pending Analysis', 'Submitted', '2D', 'Oxygen', 30, 0.05, 0.15,  25,  25,  NULL,  100, 'None', 0, NULL, 0, NULL, 0, NULL, 0, NULL, NULL),
+  (1, 'Drug Carrier Effectiveness Test', 'Done', '3D', 'Nutrients', 180, 0.20, 0.30, 150, 150, 75, 1000, 'Flow', 500,'Directed', 100, 'Random', 200, 'Collective', 50, 'Directed', '{"finalTumorCount":750,"survivalRate":0.75,"drugEffectiveness":0.82}'),
+  (1, 'Basic Simulation Test', 'Submitted', '2D', 'Oxygen', 5, 0.10, 0.10, 1, 1, NULL, 50, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL, NULL);
+

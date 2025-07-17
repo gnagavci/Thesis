@@ -9,7 +9,7 @@ const SimulationDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth(); // Add logout here
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -66,14 +66,23 @@ const SimulationDashboard = () => {
 
   return (
     <div className="simulation-dashboard">
-      {/* Header Navigation */}
+      {/* Updated Header Navigation with user info and logout */}
       <nav className="simulation-nav">
-        <Link to="/simulations" className="nav-link active">
-          Simulation Dashboard
-        </Link>
-        <Link to="/simulations/new" className="nav-link create-new">
-          Create New Simulation
-        </Link>
+        <div className="nav-left">
+          <Link to="/simulations" className="nav-link active">
+            Simulation Dashboard
+          </Link>
+          <Link to="/simulations/new" className="nav-link create-new">
+            Create New Simulation
+          </Link>
+        </div>
+
+        <div className="nav-right">
+          <span className="user-info">Welcome, {user.username}</span>
+          <button onClick={logout} className="logout-button-nav">
+            Logout
+          </button>
+        </div>
       </nav>
 
       {/* Page Content */}

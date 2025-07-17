@@ -5,7 +5,7 @@ import "./CreateSimulation.css";
 
 const CreateSimulation = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth(); // Add logout here
 
   // Redirect to login if not authenticated
   React.useEffect(() => {
@@ -20,14 +20,23 @@ const CreateSimulation = () => {
 
   return (
     <div className="create-simulation">
-      {/* Header Navigation */}
+      {/* Updated Header Navigation with user info and logout */}
       <nav className="simulation-nav">
-        <Link to="/simulations" className="nav-link">
-          Simulation Dashboard
-        </Link>
-        <Link to="/simulations/new" className="nav-link active create-new">
-          Create New Simulation
-        </Link>
+        <div className="nav-left">
+          <Link to="/simulations" className="nav-link">
+            Simulation Dashboard
+          </Link>
+          <Link to="/simulations/new" className="nav-link active create-new">
+            Create New Simulation
+          </Link>
+        </div>
+
+        <div className="nav-right">
+          <span className="user-info">Welcome, {user.username}</span>
+          <button onClick={logout} className="logout-button-nav">
+            Logout
+          </button>
+        </div>
       </nav>
 
       {/* Page Content */}

@@ -4,26 +4,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Login from "./components/Login";
 import SimulationDashboard from "./components/SimulationDashboard";
 import CreateSimulation from "./components/CreateSimulation";
-import { Link } from "react-router-dom";
 import "./App.css";
-
-const Dashboard = () => {
-  const { user, logout } = useAuth();
-
-  return (
-    <div className="dashboard">
-      <h1>Welcome, {user.username}!</h1>
-      <div className="dashboard-actions">
-        <Link to="/simulations" className="dashboard-link">
-          My Simulations
-        </Link>
-        <button onClick={logout} className="logout-button">
-          Logout
-        </button>
-      </div>
-    </div>
-  );
-};
 
 const AppContent = () => {
   const { user, login, loading } = useAuth();
@@ -34,17 +15,34 @@ const AppContent = () => {
 
   return (
     <Routes>
+      {/* Root path - if logged in, redirect to simulations */}
       <Route
         path="/"
-        element={user ? <Dashboard /> : <Login onLoginSuccess={login} />}
+        element={
+          user ? (
+            <Navigate to="/simulations" replace />
+          ) : (
+            <Login onLoginSuccess={login} />
+          )
+        }
       />
+
+      {/* Simulations dashboard - main page after login */}
       <Route
         path="/simulations"
         element={user ? <SimulationDashboard /> : <Navigate to="/" />}
       />
+
+      {/* Create new simulation */}
       <Route
         path="/simulations/new"
         element={user ? <CreateSimulation /> : <Navigate to="/" />}
+      />
+
+      {/* Catch all - redirect to simulations if logged in, otherwise to login */}
+      <Route
+        path="*"
+        element={<Navigate to={user ? "/simulations" : "/"} replace />}
       />
     </Routes>
   );
