@@ -1,7 +1,11 @@
-import React from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Login from './components/Login';
-import './App.css';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Login from "./components/Login";
+import SimulationDashboard from "./components/SimulationDashboard";
+import CreateSimulation from "./components/CreateSimulation";
+import { Link } from "react-router-dom";
+import "./App.css";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -9,9 +13,14 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <h1>Welcome, {user.username}!</h1>
-      <button onClick={logout} className="logout-button">
-        Logout
-      </button>
+      <div className="dashboard-actions">
+        <Link to="/simulations" className="dashboard-link">
+          My Simulations
+        </Link>
+        <button onClick={logout} className="logout-button">
+          Logout
+        </button>
+      </div>
     </div>
   );
 };
@@ -23,7 +32,22 @@ const AppContent = () => {
     return <div className="loading">Loading...</div>;
   }
 
-  return user ? <Dashboard /> : <Login onLoginSuccess={login} />;
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={user ? <Dashboard /> : <Login onLoginSuccess={login} />}
+      />
+      <Route
+        path="/simulations"
+        element={user ? <SimulationDashboard /> : <Navigate to="/" />}
+      />
+      <Route
+        path="/simulations/new"
+        element={user ? <CreateSimulation /> : <Navigate to="/" />}
+      />
+    </Routes>
+  );
 };
 
 function App() {

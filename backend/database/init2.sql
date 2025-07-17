@@ -47,4 +47,5 @@ CREATE TABLE simulations (
 
 -- Initial user data
 INSERT INTO users (username, password, createdAt) VALUES
-  ('testuser', '$2b$10$sHNnIbthxX4lHHoaN7eJoOWpT2NEVq5F22QIrp48K7EJ56DfZUe4O', '2025-07-08 09:00:29');
+  ('testuser', '$2b$10$sHNnIbthxX4lHHoaN7eJoOWpT2NEVq5F22QIrp48K7EJ56DfZUe4O', '2025-07-08 09:00:29'),
+  ('admin123', '$2b$10$hwMLIibKKwSaLQTpIw0querCwJS9eR4xHxgJtFE7q1ftv7UfKXAH.', '2025-07-16 12:22:27');
