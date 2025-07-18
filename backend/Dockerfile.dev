@@ -1,0 +1,17 @@
+FROM node:20-alpine
+
+WORKDIR /usr/src/app
+
+# Install nodemon globally
+RUN npm install -g nodemon
+
+# Copy package files
+COPY package*.json ./
+RUN npm install
+
+# Copy application files
+COPY . .
+
+EXPOSE 5000
+
+CMD ["nodemon", "server.js"]

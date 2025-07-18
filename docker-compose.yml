@@ -1,0 +1,101 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: abm-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-abm}
+      # MYSQL_USER: ${DB_USER:-abmuser}
+      # MYSQL_PASSWORD: ${DB_PASSWORD:-abmpassword}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/database/init2.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-rootpassword}",
+        ]
+      timeout: 20s
+      retries: 10
+      interval: 5s
+    networks:
+      - abm-network
+
+  backend:
+    build: ./backend
+    container_name: abm-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-abmuser}
+      DB_PASSWORD: ${DB_PASSWORD:-abmpassword}
+      DB_NAME: ${DB_NAME:-abm}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-minimum-32-characters}
+      PORT: 5000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - abm-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:5000/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build: ./frontend/thesis
+    container_name: abm-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - abm-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  abm-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
