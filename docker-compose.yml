@@ -31,6 +31,49 @@ services:
     networks:
       - abm-network
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: abm-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-admin}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - abm-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  worker:
+    build: ./backend
+    container_name: abm-worker
+    restart: unless-stopped
+    command: node workers/simulationWorker.js
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      DB_NAME: ${DB_NAME:-abm}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - abm-network
+
   backend:
     build: ./backend
     container_name: abm-backend
@@ -45,8 +88,11 @@ services:
       DB_NAME: ${DB_NAME:-abm}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-minimum-32-characters}
       PORT: 5000
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
     depends_on:
       mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./backend:/usr/src/app
@@ -98,4 +144,6 @@ networks:
 
 volumes:
   mysql_data:
+    driver: local
+  rabbitmq_data:
     driver: local
