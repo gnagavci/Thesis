@@ -1,53 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { apiCall } from "../utils/api";
+import SimulationTemplates, {
+  SIMULATION_TEMPLATES,
+  AVAILABLE_FIELDS,
+} from "./SimulationTemplates";
 import "./CreateSimulation.css";
 
 const CreateSimulation = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  // Form state
-  const [formData, setFormData] = useState({
-    title: "",
-    mode: "2D",
-    substrate: "Oxygen",
-    duration: 5,
-    decayRate: 0.1,
-    divisionRate: 0.1,
-    x: 50,
-    y: 50,
-    z: null,
-    tumorCount: 100,
-    tumorMovement: "None",
-    immuneCount: 0,
-    immuneMovement: "None",
-    stemCount: 0,
-    stemMovement: "None",
-    fibroblastCount: 0,
-    fibroblastMovement: "None",
-    drugCarrierCount: 0,
-    drugCarrierMovement: "None",
-  });
-
+  const [selectedTemplate, setSelectedTemplate] = useState("basic");
+  const [selectedFields, setSelectedFields] = useState([]);
+  const [formData, setFormData] = useState({});
   const [numberOfSimulations, setNumberOfSimulations] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // Redirect to login if not authenticated
-  React.useEffect(() => {
+  useEffect(() => {
     if (!user) {
       navigate("/");
     }
   }, [user, navigate]);
 
+  // Apply template when selection changes
+  useEffect(() => {
+    if (selectedTemplate === "custom") {
+      // For custom, start with only required fields selected
+      const requiredFields = Object.entries(AVAILABLE_FIELDS)
+        .filter(([_, field]) => field.required)
+        .map(([fieldName, _]) => fieldName);
+
+      setSelectedFields(requiredFields);
+
+      // Set default values for required fields
+      const defaults = {};
+      requiredFields.forEach((fieldName) => {
+        defaults[fieldName] = AVAILABLE_FIELDS[fieldName].default;
+      });
+      setFormData(defaults);
+    } else if (SIMULATION_TEMPLATES[selectedTemplate]) {
+      // Apply template defaults
+      const template = SIMULATION_TEMPLATES[selectedTemplate];
+      const templateData = {};
+      const templateFields = [];
+
+      Object.entries(template.fields).forEach(([key, field]) => {
+        templateData[key] = field.default;
+        templateFields.push(key);
+      });
+
+      setFormData(templateData);
+      setSelectedFields(templateFields);
+    }
+  }, [selectedTemplate]);
+
+  const handleFieldToggle = (fieldName) => {
+    const field = AVAILABLE_FIELDS[fieldName];
+    if (field.required) return; // Can't toggle required fields
+
+    if (selectedFields.includes(fieldName)) {
+      // Remove field
+      setSelectedFields((prev) => prev.filter((f) => f !== fieldName));
+      // Remove from formData
+      setFormData((prev) => {
+        const newData = { ...prev };
+        delete newData[fieldName];
+        return newData;
+      });
+    } else {
+      // Add field
+      setSelectedFields((prev) => [...prev, fieldName]);
+      // Add to formData with default value
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: field.default,
+      }));
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    const field = AVAILABLE_FIELDS[name];
+
+    let processedValue = value;
+    if (field.type === "number" && value !== "") {
+      processedValue = parseFloat(value);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value === "" ? null : isNaN(value) ? value : parseFloat(value),
+      [name]: processedValue,
     }));
   };
 
@@ -58,21 +105,41 @@ const CreateSimulation = () => {
     setSubmitting(true);
 
     try {
-      // Validate
-      if (formData.tumorCount < 1) {
-        throw new Error("Tumor count must be at least 1");
+      // Validate required fields
+      const requiredFields = Object.entries(AVAILABLE_FIELDS)
+        .filter(([_, field]) => field.required)
+        .map(([fieldName, _]) => fieldName);
+
+      for (const reqField of requiredFields) {
+        if (
+          !formData[reqField] ||
+          (reqField === "tumorCount" && formData[reqField] < 1)
+        ) {
+          throw new Error(`${AVAILABLE_FIELDS[reqField].label} is required`);
+        }
       }
 
       if (numberOfSimulations < 1 || numberOfSimulations > 100) {
         throw new Error("Number of simulations must be between 1 and 100");
       }
 
+      // Build final data with defaults for unselected fields
+      const finalData = {};
+      Object.entries(AVAILABLE_FIELDS).forEach(([fieldName, field]) => {
+        if (formData.hasOwnProperty(fieldName)) {
+          finalData[fieldName] = formData[fieldName];
+        } else {
+          finalData[fieldName] = field.default;
+        }
+      });
+
       // Call the batch endpoint
       const response = await apiCall("/simulations/create-batch", {
         method: "POST",
         body: JSON.stringify({
-          simulationData: formData,
+          simulationData: finalData,
           count: numberOfSimulations,
+          template: selectedTemplate,
         }),
       });
 
@@ -91,6 +158,61 @@ const CreateSimulation = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const renderField = (fieldName) => {
+    const field = AVAILABLE_FIELDS[fieldName];
+    if (!field) return null;
+
+    // Check dependencies
+    if (field.dependsOn) {
+      const dependsOnValue = formData[field.dependsOn.field];
+      if (dependsOnValue !== field.dependsOn.value) {
+        return null;
+      }
+    }
+
+    return (
+      <div key={fieldName} className="form-group">
+        <label htmlFor={fieldName}>
+          {field.label}
+          {field.required && <span className="required"> *</span>}
+        </label>
+
+        {field.type === "select" ? (
+          <select
+            id={fieldName}
+            name={fieldName}
+            value={formData[fieldName] || field.default || ""}
+            onChange={handleInputChange}
+            required={field.required}
+          >
+            {!field.required && <option value="">None</option>}
+            {field.options.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type={field.type}
+            id={fieldName}
+            name={fieldName}
+            value={
+              formData[fieldName] !== null && formData[fieldName] !== undefined
+                ? formData[fieldName]
+                : ""
+            }
+            onChange={handleInputChange}
+            min={field.min}
+            max={field.max}
+            step={field.step}
+            required={field.required}
+          />
+        )}
+      </div>
+    );
   };
 
   if (!user) {
@@ -123,256 +245,27 @@ const CreateSimulation = () => {
         <h1 className="page-title">Create New Simulation</h1>
 
         <form onSubmit={handleSubmit} className="simulation-form">
-          {/* Basic Information */}
+          {/* Template Selection */}
           <div className="form-section">
-            <h3>Basic Information</h3>
-
-            <div className="form-group">
-              <label htmlFor="title">Simulation Title</label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Enter simulation title"
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="mode">Mode</label>
-                <select
-                  id="mode"
-                  name="mode"
-                  value={formData.mode}
-                  onChange={handleInputChange}
-                >
-                  <option value="2D">2D</option>
-                  <option value="3D">3D</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="substrate">Substrate</label>
-                <select
-                  id="substrate"
-                  name="substrate"
-                  value={formData.substrate}
-                  onChange={handleInputChange}
-                >
-                  <option value="Oxygen">Oxygen</option>
-                  <option value="Glucose">Glucose</option>
-                  <option value="Nutrients">Nutrients</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="duration">Duration (minutes)</label>
-                <input
-                  type="number"
-                  id="duration"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  min="1"
-                  max="1440"
-                />
-              </div>
-            </div>
+            <SimulationTemplates
+              selectedTemplate={selectedTemplate}
+              onTemplateChange={setSelectedTemplate}
+              selectedFields={selectedFields}
+              onFieldToggle={handleFieldToggle}
+            />
           </div>
 
-          {/* Simulation Parameters */}
+          {/* Form Fields */}
           <div className="form-section">
             <h3>Simulation Parameters</h3>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="decayRate">Decay Rate</label>
-                <input
-                  type="number"
-                  id="decayRate"
-                  name="decayRate"
-                  value={formData.decayRate}
-                  onChange={handleInputChange}
-                  min="0"
-                  max="1"
-                  step="0.01"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="divisionRate">Division Rate</label>
-                <input
-                  type="number"
-                  id="divisionRate"
-                  name="divisionRate"
-                  value={formData.divisionRate}
-                  onChange={handleInputChange}
-                  min="0"
-                  max="1"
-                  step="0.01"
-                />
-              </div>
+            <div className="template-fields">
+              {selectedFields.map((fieldName) => renderField(fieldName))}
             </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="x">X Dimension</label>
-                <input
-                  type="number"
-                  id="x"
-                  name="x"
-                  value={formData.x}
-                  onChange={handleInputChange}
-                  min="1"
-                  max="1000"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="y">Y Dimension</label>
-                <input
-                  type="number"
-                  id="y"
-                  name="y"
-                  value={formData.y}
-                  onChange={handleInputChange}
-                  min="1"
-                  max="1000"
-                />
-              </div>
-
-              {formData.mode === "3D" && (
-                <div className="form-group">
-                  <label htmlFor="z">Z Dimension</label>
-                  <input
-                    type="number"
-                    id="z"
-                    name="z"
-                    value={formData.z || 50}
-                    onChange={handleInputChange}
-                    min="1"
-                    max="1000"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Cell Types */}
-          <div className="form-section">
-            <h3>Cell Types</h3>
-
-            {/* Tumor Cells */}
-            <div className="cell-type-section">
-              <h4>Tumor Cells</h4>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="tumorCount">Count</label>
-                  <input
-                    type="number"
-                    id="tumorCount"
-                    name="tumorCount"
-                    value={formData.tumorCount}
-                    onChange={handleInputChange}
-                    min="1"
-                    max="10000"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="tumorMovement">Movement Type</label>
-                  <select
-                    id="tumorMovement"
-                    name="tumorMovement"
-                    value={formData.tumorMovement}
-                    onChange={handleInputChange}
-                  >
-                    <option value="None">None</option>
-                    <option value="Random">Random</option>
-                    <option value="Directed">Directed</option>
-                    <option value="Collective">Collective</option>
-                    <option value="Flow">Flow</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Immune Cells */}
-            <div className="cell-type-section">
-              <h4>Immune Cells</h4>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="immuneCount">Count</label>
-                  <input
-                    type="number"
-                    id="immuneCount"
-                    name="immuneCount"
-                    value={formData.immuneCount}
-                    onChange={handleInputChange}
-                    min="0"
-                    max="10000"
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="immuneMovement">Movement Type</label>
-                  <select
-                    id="immuneMovement"
-                    name="immuneMovement"
-                    value={formData.immuneMovement}
-                    onChange={handleInputChange}
-                  >
-                    <option value="None">None</option>
-                    <option value="Random">Random</option>
-                    <option value="Directed">Directed</option>
-                    <option value="Collective">Collective</option>
-                    <option value="Flow">Flow</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Additional cell types (collapsed by default) */}
-            <details className="additional-cells">
-              <summary>Additional Cell Types</summary>
-
-              {/* Stem Cells */}
-              <div className="cell-type-section">
-                <h4>Stem Cells</h4>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="stemCount">Count</label>
-                    <input
-                      type="number"
-                      id="stemCount"
-                      name="stemCount"
-                      value={formData.stemCount}
-                      onChange={handleInputChange}
-                      min="0"
-                      max="10000"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="stemMovement">Movement Type</label>
-                    <select
-                      id="stemMovement"
-                      name="stemMovement"
-                      value={formData.stemMovement}
-                      onChange={handleInputChange}
-                    >
-                      <option value="None">None</option>
-                      <option value="Random">Random</option>
-                      <option value="Directed">Directed</option>
-                      <option value="Collective">Collective</option>
-                      <option value="Flow">Flow</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Fibroblast and Drug Carrier sections similar... */}
-            </details>
+            {selectedFields.length === 0 && (
+              <p className="no-fields-message">
+                Please select fields from the template above.
+              </p>
+            )}
           </div>
 
           {/* Batch Configuration */}
@@ -408,7 +301,10 @@ const CreateSimulation = () => {
             <button
               type="submit"
               className="submit-button"
-              disabled={submitting}
+              disabled={
+                submitting ||
+                (selectedTemplate === "custom" && selectedFields.length === 0)
+              }
             >
               {submitting
                 ? `Creating ${numberOfSimulations} simulation(s)...`
