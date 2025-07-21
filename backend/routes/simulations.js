@@ -379,4 +379,60 @@ router.post("/create-batch", authenticateToken, async (req, res) => {
   }
 });
 
+router.get("/:id/results", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const simulationId = req.params.id;
+
+    // Fetch simulation with results
+    const [simulations] = await db.execute(
+      `SELECT id, userId, title, status, result, mode, substrate, duration,
+              tumorCount, immuneCount, stemCount, fibroblastCount, drugCarrierCount
+       FROM simulations 
+       WHERE id = ? AND userId = ?`,
+      [simulationId, userId]
+    );
+
+    if (simulations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Simulation not found or access denied",
+      });
+    }
+
+    const simulation = simulations[0];
+
+    if (simulation.status !== "Done") {
+      return res.status(400).json({
+        success: false,
+        error: "Results not available - simulation not complete",
+      });
+    }
+
+    res.json({
+      success: true,
+      id: simulation.id,
+      title: simulation.title,
+      status: simulation.status,
+      result: simulation.result,
+      parameters: {
+        mode: simulation.mode,
+        substrate: simulation.substrate,
+        duration: simulation.duration,
+        tumorCount: simulation.tumorCount,
+        immuneCount: simulation.immuneCount,
+        stemCount: simulation.stemCount,
+        fibroblastCount: simulation.fibroblastCount,
+        drugCarrierCount: simulation.drugCarrierCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching simulation results:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch simulation results",
+    });
+  }
+});
+
 export default router;

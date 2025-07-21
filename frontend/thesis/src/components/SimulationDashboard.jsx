@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { apiCall } from "../utils/api";
 import { usePolling } from "../hooks/usePolling";
+import SimulationResultsModal from "./SimulationResultsModal";
 import "./SimulationDashboard.css";
 
 const SimulationDashboard = () => {
@@ -13,6 +14,8 @@ const SimulationDashboard = () => {
   const [pollingInterval, setPollingInterval] = useState(5000);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [selectedSimulation, setSelectedSimulation] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -103,9 +106,15 @@ const SimulationDashboard = () => {
     }
   };
 
+  // Add the missing handleCheckResults function
   const handleCheckResults = (simulation) => {
-    console.log("Check results for simulation:", simulation);
-    // TODO: Implement results modal
+    setSelectedSimulation(simulation);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedSimulation(null);
   };
 
   const toggleUpdateStrategy = () => {
@@ -262,6 +271,15 @@ const SimulationDashboard = () => {
           </div>
         )}
       </div>
+
+      {selectedSimulation && (
+        <SimulationResultsModal
+          simulationId={selectedSimulation.id}
+          simulation={selectedSimulation}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };
