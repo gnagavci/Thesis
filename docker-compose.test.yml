@@ -1,0 +1,45 @@
+services:
+  # Unit tests service
+  tests:
+    build:
+      context: ./frontend/thesis
+      dockerfile: Dockerfile.test
+    command: ["npm", "run", "test:unit:run"]
+    volumes:
+      - ./frontend/thesis:/app
+      - /app/node_modules
+    working_dir: /app
+    environment:
+      NODE_ENV: test
+    networks:
+      - thesis_network
+
+  # Playwright E2E tests service
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.45.0-jammy
+    command: ["npm", "run", "test:e2e"]
+    volumes:
+      - ./frontend/thesis:/app
+      - /app/node_modules
+    working_dir: /app
+    environment:
+      NODE_ENV: test
+      CI: true
+    depends_on:
+      - frontend
+    networks:
+      - thesis_network
+
+  # Frontend for E2E testing (production build)
+  frontend-test:
+    build:
+      context: ./frontend/thesis
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - thesis_network
+
+networks:
+  thesis_network:
+    external: true
