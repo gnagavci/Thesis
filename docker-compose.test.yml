@@ -1,4 +1,61 @@
 services:
+  # MySQL for testing
+  mysql-test:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: testpassword
+      MYSQL_DATABASE: abm_test
+    ports:
+      - "3307:3306"
+    networks:
+      - test_network
+
+  # RabbitMQ for testing
+  rabbitmq-test:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: testuser
+      RABBITMQ_DEFAULT_PASS: testpass
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    networks:
+      - test_network
+
+  # Backend for testing
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: test
+      DB_HOST: mysql-test
+      DB_USER: root
+      DB_PASSWORD: testpassword
+      DB_NAME: abm_test
+      RABBITMQ_URL: amqp://testuser:testpass@rabbitmq-test:5672
+      JWT_SECRET: test-jwt-secret-key-for-testing-purposes
+      PORT: 5000
+    depends_on:
+      - mysql-test
+      - rabbitmq-test
+    networks:
+      - test_network
+
+  # Frontend for E2E testing
+  frontend:
+    build:
+      context: ./frontend/thesis
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    environment:
+      VITE_API_URL: http://backend-test:5000
+    depends_on:
+      - backend-test
+    networks:
+      - test_network
+
   # Unit tests service
   tests:
     build:
@@ -12,34 +69,29 @@ services:
     environment:
       NODE_ENV: test
     networks:
-      - thesis_network
+      - test_network
 
   # Playwright E2E tests service
   playwright:
     image: mcr.microsoft.com/playwright:v1.45.0-jammy
-    command: ["npm", "run", "test:e2e"]
+    command: |
+      sh -c "
+        cd /app &&
+        npm install &&
+        npm run test:e2e
+      "
     volumes:
       - ./frontend/thesis:/app
-      - /app/node_modules
     working_dir: /app
     environment:
       NODE_ENV: test
       CI: true
+      PLAYWRIGHT_BASE_URL: http://frontend:80
     depends_on:
       - frontend
     networks:
-      - thesis_network
-
-  # Frontend for E2E testing (production build)
-  frontend-test:
-    build:
-      context: ./frontend/thesis
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    networks:
-      - thesis_network
+      - test_network
 
 networks:
-  thesis_network:
-    external: true
+  test_network:
+    driver: bridge

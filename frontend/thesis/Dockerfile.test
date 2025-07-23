@@ -1,18 +1,19 @@
-FROM node:18-alpine
+# Use Ubuntu-based Node image for Playwright compatibility
+FROM node:18-bullseye
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies including dev dependencies
+# Install dependencies
 RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Install Playwright browsers
+# Install Playwright browsers with system dependencies
 RUN npx playwright install --with-deps chromium
 
 # Default command
-CMD ["npm", "run", "test"]
+CMD ["npm", "run", "test:unit:run"]
