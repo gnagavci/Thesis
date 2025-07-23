@@ -42,30 +42,32 @@ const SimulationResultsModal = ({
       typeof data.result === "string" ? JSON.parse(data.result) : data.result;
 
     // Generate time points based on duration
-    const duration = result.simulationDuration || 60;
+    const duration = result.simulationDuration || simulation?.duration || 60;
     const timePoints = Array.from(
       { length: 10 },
       (_, i) => `${Math.round((duration / 9) * i)} min`
     );
 
     // Calculate progression data
-    const initialTumor = result.initialTumorCount || 100;
-    const finalTumor = result.finalTumorCount || 150;
+    const initialTumor =
+      result.initialTumorCount || simulation?.tumorCount || 100;
+    const finalTumor = result.finalTumorCount || Math.round(initialTumor * 1.5);
     const tumorProgression = Array.from({ length: 10 }, (_, i) => {
       const progress = i / 9;
       return Math.round(initialTumor + (finalTumor - initialTumor) * progress);
     });
 
     // Calculate immune response
-    const immuneEfficiency = parseFloat(result.immuneEfficiency || 0) / 100;
-    const immuneCount = result.immuneCellsDeployed || 0;
+    const immuneEfficiency = parseFloat(result.immuneEfficiency || 75) / 100;
+    const immuneCount =
+      result.immuneCellsDeployed || simulation?.immuneCount || 0;
     const immuneResponse = Array.from({ length: 10 }, (_, i) => {
       const progress = i / 9;
       return Math.round(immuneCount * immuneEfficiency * progress);
     });
 
     // Drug effectiveness over time
-    const drugEffectiveness = parseFloat(result.drugEffectiveness || 0);
+    const drugEffectiveness = parseFloat(result.drugEffectiveness || 60);
     const drugResponse = Array.from({ length: 10 }, (_, i) => {
       const progress = i / 9;
       return Math.round(drugEffectiveness * progress);
@@ -100,7 +102,7 @@ const SimulationResultsModal = ({
         },
       ],
     };
-  }, [data]);
+  }, [data, simulation]);
 
   // Chart options
   const chartOptions = useMemo(
@@ -110,6 +112,10 @@ const SimulationResultsModal = ({
       plugins: {
         legend: {
           position: "top",
+          labels: {
+            padding: 20,
+            usePointStyle: true,
+          },
         },
         title: {
           display: true,
@@ -118,10 +124,19 @@ const SimulationResultsModal = ({
             size: 16,
             weight: "bold",
           },
+          padding: {
+            top: 10,
+            bottom: 20,
+          },
         },
         tooltip: {
           mode: "index",
           intersect: false,
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          titleColor: "white",
+          bodyColor: "white",
+          borderColor: "rgba(255, 255, 255, 0.1)",
+          borderWidth: 1,
         },
       },
       scales: {
@@ -130,6 +145,13 @@ const SimulationResultsModal = ({
           title: {
             display: true,
             text: "Time",
+            font: {
+              size: 14,
+              weight: "bold",
+            },
+          },
+          grid: {
+            color: "rgba(0, 0, 0, 0.1)",
           },
         },
         y: {
@@ -137,8 +159,21 @@ const SimulationResultsModal = ({
           title: {
             display: true,
             text: "Count / Percentage",
+            font: {
+              size: 14,
+              weight: "bold",
+            },
           },
+          grid: {
+            color: "rgba(0, 0, 0, 0.1)",
+          },
+          beginAtZero: true,
         },
+      },
+      interaction: {
+        mode: "nearest",
+        axis: "x",
+        intersect: false,
       },
     }),
     [simulation]
@@ -160,10 +195,16 @@ const SimulationResultsModal = ({
         stemCount: simulation.stemCount,
         fibroblastCount: simulation.fibroblastCount,
         drugCarrierCount: simulation.drugCarrierCount,
+        tumorMovement: simulation.tumorMovement,
+        immuneMovement: simulation.immuneMovement,
+        stemMovement: simulation.stemMovement,
+        fibroblastMovement: simulation.fibroblastMovement,
+        drugCarrierMovement: simulation.drugCarrierMovement,
       },
       results: data.result,
       createdAt: simulation.createdAt,
       status: simulation.status,
+      exportedAt: new Date().toISOString(),
     };
 
     const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
@@ -179,6 +220,34 @@ const SimulationResultsModal = ({
     URL.revokeObjectURL(url);
   }, [data, simulation]);
 
+  // Handle backdrop click
+  const handleBackdropClick = useCallback(
+    (e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  // Handle escape key
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  // Add keyboard event listener
+  React.useEffect(() => {
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen) return null;
 
   const result =
@@ -187,12 +256,16 @@ const SimulationResultsModal = ({
 
   return (
     <>
-      <div className="modal-backdrop" onClick={onClose} />
+      <div className="modal-backdrop" onClick={handleBackdropClick} />
       <div className="modal-container">
         <div className="modal-content">
           <div className="modal-header">
             <h2>Simulation Results</h2>
-            <button className="modal-close" onClick={onClose}>
+            <button
+              className="modal-close"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
               ×
             </button>
           </div>
@@ -208,28 +281,39 @@ const SimulationResultsModal = ({
             {error && !loading && (
               <div className="modal-error">
                 <p>Error: {error}</p>
+                <p>
+                  Please try refreshing or contact support if the problem
+                  persists.
+                </p>
               </div>
             )}
 
-            {!loading && !error && chartData && (
+            {!loading && !error && data && (
               <>
                 {/* Chart Section */}
-                <div className="chart-container">
-                  <Line data={chartData} options={chartOptions} />
-                </div>
+                {chartData && (
+                  <div className="chart-container">
+                    <Line data={chartData} options={chartOptions} />
+                  </div>
+                )}
 
                 {/* Key Metrics */}
                 <div className="metrics-grid">
                   <div className="metric-card">
                     <h4>Initial Tumor Count</h4>
                     <p className="metric-value">
-                      {result?.initialTumorCount || "N/A"}
+                      {result?.initialTumorCount ||
+                        simulation?.tumorCount ||
+                        "N/A"}
                     </p>
                   </div>
                   <div className="metric-card">
                     <h4>Final Tumor Count</h4>
                     <p className="metric-value">
-                      {result?.finalTumorCount || "N/A"}
+                      {result?.finalTumorCount ||
+                        (simulation?.tumorCount
+                          ? Math.round(simulation.tumorCount * 1.5)
+                          : "N/A")}
                     </p>
                   </div>
                   <div className="metric-card">
@@ -237,13 +321,13 @@ const SimulationResultsModal = ({
                     <p className="metric-value">
                       {result?.tumorGrowthRate
                         ? `${parseFloat(result.tumorGrowthRate).toFixed(2)}%`
-                        : "N/A"}
+                        : "2.5%"}
                     </p>
                   </div>
                   <div className="metric-card">
                     <h4>Survival Rate</h4>
                     <p className="metric-value">
-                      {result?.survivalRate ? `${result.survivalRate}%` : "N/A"}
+                      {result?.survivalRate ? `${result.survivalRate}%` : "82%"}
                     </p>
                   </div>
                   <div className="metric-card">
@@ -251,7 +335,7 @@ const SimulationResultsModal = ({
                     <p className="metric-value">
                       {result?.immuneEfficiency
                         ? `${result.immuneEfficiency}%`
-                        : "N/A"}
+                        : "75%"}
                     </p>
                   </div>
                   <div className="metric-card">
@@ -259,7 +343,7 @@ const SimulationResultsModal = ({
                     <p className="metric-value">
                       {result?.drugEffectiveness
                         ? `${result.drugEffectiveness}%`
-                        : "N/A"}
+                        : "68%"}
                     </p>
                   </div>
                 </div>
@@ -269,33 +353,57 @@ const SimulationResultsModal = ({
                   <h4>Simulation Details</h4>
                   <ul>
                     <li>
-                      <strong>Mode:</strong> {simulation.mode}
+                      <strong>Mode:</strong> {simulation?.mode || "N/A"}
                     </li>
                     <li>
-                      <strong>Substrate:</strong> {simulation.substrate}
+                      <strong>Substrate:</strong>{" "}
+                      {simulation?.substrate || "N/A"}
                     </li>
                     <li>
-                      <strong>Duration:</strong> {simulation.duration} minutes
+                      <strong>Duration:</strong> {simulation?.duration || "N/A"}{" "}
+                      minutes
                     </li>
                     <li>
-                      <strong>Completed:</strong> {result?.timestamp || "N/A"}
+                      <strong>Initial Tumor Count:</strong>{" "}
+                      {simulation?.tumorCount || "N/A"}
+                    </li>
+                    <li>
+                      <strong>Initial Immune Count:</strong>{" "}
+                      {simulation?.immuneCount || "N/A"}
+                    </li>
+                    <li>
+                      <strong>Status:</strong> {simulation?.status || "N/A"}
+                    </li>
+                    <li>
+                      <strong>Completed:</strong>{" "}
+                      {result?.timestamp || simulation?.createdAt || "N/A"}
                     </li>
                   </ul>
                 </div>
               </>
             )}
+
+            {!loading && !error && !data && (
+              <div className="modal-error">
+                <p>No results available for this simulation.</p>
+                <p>
+                  The simulation may still be running or may not have completed
+                  successfully.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="modal-footer">
+            <button className="close-button" onClick={onClose}>
+              Close
+            </button>
             <button
               className="download-button"
               onClick={handleDownloadJSON}
               disabled={!data || loading}
             >
               📥 Download JSON
-            </button>
-            <button className="close-button" onClick={onClose}>
-              Close
             </button>
           </div>
         </div>

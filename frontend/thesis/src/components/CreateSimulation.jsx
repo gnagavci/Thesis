@@ -6,6 +6,7 @@ import SimulationTemplates, {
   SIMULATION_TEMPLATES,
   AVAILABLE_FIELDS,
 } from "./SimulationTemplates";
+import ImportSimulationModal from "./ImportSimulationModal";
 import "./CreateSimulation.css";
 
 const CreateSimulation = () => {
@@ -19,6 +20,10 @@ const CreateSimulation = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // New state for import modal
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -160,6 +165,22 @@ const CreateSimulation = () => {
     }
   };
 
+  // New handlers for import functionality
+  const handleImportSuccess = (importedCount) => {
+    setImportMessage(
+      `Successfully imported ${importedCount} simulation${
+        importedCount > 1 ? "s" : ""
+      }!`
+    );
+    setTimeout(() => {
+      navigate("/simulations");
+    }, 2000);
+  };
+
+  const handleImportClose = () => {
+    setShowImportModal(false);
+  };
+
   const renderField = (fieldName) => {
     const field = AVAILABLE_FIELDS[fieldName];
     if (!field) return null;
@@ -242,7 +263,24 @@ const CreateSimulation = () => {
 
       {/* Page Content */}
       <div className="create-content">
-        <h1 className="page-title">Create New Simulation</h1>
+        <div className="page-header">
+          <h1 className="page-title">Create New Simulation</h1>
+          <div className="header-actions">
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              className="import-button"
+              disabled={submitting}
+            >
+              📁 Import from File
+            </button>
+          </div>
+        </div>
+
+        {/* Import success message */}
+        {importMessage && (
+          <div className="success-message import-success">{importMessage}</div>
+        )}
 
         <form onSubmit={handleSubmit} className="simulation-form">
           {/* Template Selection */}
@@ -314,6 +352,13 @@ const CreateSimulation = () => {
             </button>
           </div>
         </form>
+
+        {/* Import Modal */}
+        <ImportSimulationModal
+          isOpen={showImportModal}
+          onClose={handleImportClose}
+          onSuccess={handleImportSuccess}
+        />
       </div>
     </div>
   );
