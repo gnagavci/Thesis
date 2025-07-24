@@ -12,7 +12,7 @@
     "test:unit": "vitest",
     "test:unit:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui",
+    "test:ui": "vitest --ui --api 9527",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",

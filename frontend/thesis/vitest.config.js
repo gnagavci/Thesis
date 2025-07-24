@@ -9,8 +9,9 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  // Move server config outside of test, or configure it for test UI specifically
   server: {
-    host: "0.0.0.0",
+    host: "127.0.0.1", // Changed from 0.0.0.0 to localhost
     port: 3000,
     proxy: {
       "/api": {
@@ -48,6 +49,11 @@ export default defineConfig({
           include: ["@testing-library/jest-dom"],
         },
       },
+    },
+    // Add UI-specific server config for vitest UI
+    ui: {
+      host: "127.0.0.1",
+      port: 51205, // Different port to avoid conflicts
     },
   },
 });
