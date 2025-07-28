@@ -1,0 +1,7 @@
+{
+  "title": "Test Simulation"
+  "mode": "2D",
+  "substrate": "Oxygen",
+  "duration": 24,
+  "tumorCount": 200
+}

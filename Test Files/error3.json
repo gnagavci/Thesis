@@ -1,0 +1,9 @@
+{
+  "title": "Bad Enum Test",
+  "mode": "4D",
+  "substrate": "Oxygen",
+  "duration": 24,
+  "tumorCount": 200,
+  "tumorMovement": "flying",
+  "immuneMovement": "teleporting"
+}

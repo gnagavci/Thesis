@@ -1,0 +1,7 @@
+{
+  "title": "Basic 2D Simulation",
+  "mode": "2D",
+  "substrate": "Oxygen",
+  "duration": 5,
+  "tumorCount": 200
+}
