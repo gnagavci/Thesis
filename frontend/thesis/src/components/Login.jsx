@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { FaUser, FaLock, FaSpinner } from "react-icons/fa";
+import { IoLogIn } from "react-icons/io5";
 import "./Login.css";
 
 const Login = ({ onLoginSuccess }) => {
@@ -42,9 +44,15 @@ const Login = ({ onLoginSuccess }) => {
   return (
     <div className="login-container">
       <div className="login-box">
+        <div className="login-header">
+          <IoLogIn className="login-logo" />
+          <h1 className="login-title">Welcome</h1>
+          <p className="login-subtitle">Please sign in to your account</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
-            <span className="input-icon">👤</span>
+            <FaUser className="input-icon" aria-hidden="true" />
             <input
               type="text"
               placeholder="USERNAME"
@@ -52,11 +60,12 @@ const Login = ({ onLoginSuccess }) => {
               onChange={(e) => setUsername(e.target.value)}
               className="login-input"
               required
+              aria-label="Username"
             />
           </div>
 
           <div className="input-group">
-            <span className="input-icon">🔒</span>
+            <FaLock className="input-icon" aria-hidden="true" />
             <input
               type="password"
               placeholder="PASSWORD"
@@ -64,13 +73,30 @@ const Login = ({ onLoginSuccess }) => {
               onChange={(e) => setPassword(e.target.value)}
               className="login-input"
               required
+              aria-label="Password"
             />
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="error-message" role="alert" aria-live="polite">
+              {error}
+            </div>
+          )}
 
-          <button type="submit" className="login-button" disabled={loading}>
-            {loading ? "LOGGING IN..." : "LOGIN"}
+          <button
+            type="submit"
+            className="login-button"
+            disabled={loading}
+            aria-label={loading ? "Logging in..." : "Login"}
+          >
+            {loading ? (
+              <>
+                <FaSpinner className="spinner" />
+                LOGGING IN...
+              </>
+            ) : (
+              "LOGIN"
+            )}
           </button>
         </form>
       </div>
