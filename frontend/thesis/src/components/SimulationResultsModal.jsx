@@ -12,6 +12,20 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { useSimulationResults } from "../hooks/useSimulationResults";
+import {
+  FaTimes,
+  FaDownload,
+  FaSpinner,
+  FaExclamationTriangle,
+  FaChartLine,
+  FaFlask,
+  FaVirus,
+  FaShieldAlt,
+  FaPills,
+  FaHeartbeat,
+  FaClock,
+  FaCalendarAlt,
+} from "react-icons/fa";
 import "./SimulationResultsModal.css";
 
 // Register Chart.js components
@@ -244,7 +258,11 @@ const SimulationResultsModal = ({
   React.useEffect(() => {
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden"; // Prevent background scroll
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+        document.body.style.overflow = "unset";
+      };
     }
   }, [isOpen, handleKeyDown]);
 
@@ -260,31 +278,37 @@ const SimulationResultsModal = ({
       <div className="modal-container">
         <div className="modal-content">
           <div className="modal-header">
-            <h2>Simulation Results</h2>
+            <div className="modal-title-section">
+              <FaChartLine className="modal-title-icon" />
+              <h2 className="modal-title">Simulation Results</h2>
+            </div>
             <button
               className="modal-close"
               onClick={onClose}
               aria-label="Close modal"
             >
-              ×
+              <FaTimes />
             </button>
           </div>
 
           <div className="modal-body">
             {loading && (
               <div className="modal-loading">
-                <div className="spinner"></div>
+                <FaSpinner className="spinner" />
                 <p>Loading results...</p>
               </div>
             )}
 
             {error && !loading && (
               <div className="modal-error">
-                <p>Error: {error}</p>
-                <p>
-                  Please try refreshing or contact support if the problem
-                  persists.
-                </p>
+                <FaExclamationTriangle className="error-icon" />
+                <div className="error-content">
+                  <p className="error-text">Error: {error}</p>
+                  <p className="error-subtext">
+                    Please try refreshing or contact support if the problem
+                    persists.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -292,118 +316,205 @@ const SimulationResultsModal = ({
               <>
                 {/* Chart Section */}
                 {chartData && (
-                  <div className="chart-container">
-                    <Line data={chartData} options={chartOptions} />
+                  <div className="chart-section">
+                    <div className="section-header">
+                      <FaChartLine className="section-icon" />
+                      <h3 className="section-title">Progression Over Time</h3>
+                    </div>
+                    <div className="chart-container">
+                      <Line data={chartData} options={chartOptions} />
+                    </div>
                   </div>
                 )}
 
                 {/* Key Metrics */}
-                <div className="metrics-grid">
-                  <div className="metric-card">
-                    <h4>Initial Tumor Count</h4>
-                    <p className="metric-value">
-                      {result?.initialTumorCount ||
-                        simulation?.tumorCount ||
-                        "N/A"}
-                    </p>
+                <div className="metrics-section">
+                  <div className="section-header">
+                    <FaFlask className="section-icon" />
+                    <h3 className="section-title">Key Metrics</h3>
                   </div>
-                  <div className="metric-card">
-                    <h4>Final Tumor Count</h4>
-                    <p className="metric-value">
-                      {result?.finalTumorCount ||
-                        (simulation?.tumorCount
-                          ? Math.round(simulation.tumorCount * 1.5)
-                          : "N/A")}
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <h4>Tumor Growth Rate</h4>
-                    <p className="metric-value">
-                      {result?.tumorGrowthRate
-                        ? `${parseFloat(result.tumorGrowthRate).toFixed(2)}%`
-                        : "2.5%"}
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <h4>Survival Rate</h4>
-                    <p className="metric-value">
-                      {result?.survivalRate ? `${result.survivalRate}%` : "82%"}
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <h4>Immune Efficiency</h4>
-                    <p className="metric-value">
-                      {result?.immuneEfficiency
-                        ? `${result.immuneEfficiency}%`
-                        : "75%"}
-                    </p>
-                  </div>
-                  <div className="metric-card">
-                    <h4>Drug Effectiveness</h4>
-                    <p className="metric-value">
-                      {result?.drugEffectiveness
-                        ? `${result.drugEffectiveness}%`
-                        : "68%"}
-                    </p>
+                  <div className="metrics-grid">
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <FaVirus className="metric-icon tumor" />
+                        <h4 className="metric-label">Initial Tumor Count</h4>
+                      </div>
+                      <p className="metric-value">
+                        {result?.initialTumorCount ||
+                          simulation?.tumorCount ||
+                          "N/A"}
+                      </p>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <FaVirus className="metric-icon tumor" />
+                        <h4 className="metric-label">Final Tumor Count</h4>
+                      </div>
+                      <p className="metric-value">
+                        {result?.finalTumorCount ||
+                          (simulation?.tumorCount
+                            ? Math.round(simulation.tumorCount * 1.5)
+                            : "N/A")}
+                      </p>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <FaHeartbeat className="metric-icon growth" />
+                        <h4 className="metric-label">Tumor Growth Rate</h4>
+                      </div>
+                      <p className="metric-value">
+                        {result?.tumorGrowthRate
+                          ? `${parseFloat(result.tumorGrowthRate).toFixed(2)}%`
+                          : "2.5%"}
+                      </p>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <FaShieldAlt className="metric-icon survival" />
+                        <h4 className="metric-label">Survival Rate</h4>
+                      </div>
+                      <p className="metric-value">
+                        {result?.survivalRate
+                          ? `${result.survivalRate}%`
+                          : "82%"}
+                      </p>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <FaShieldAlt className="metric-icon immune" />
+                        <h4 className="metric-label">Immune Efficiency</h4>
+                      </div>
+                      <p className="metric-value">
+                        {result?.immuneEfficiency
+                          ? `${result.immuneEfficiency}%`
+                          : "75%"}
+                      </p>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <FaPills className="metric-icon drug" />
+                        <h4 className="metric-label">Drug Effectiveness</h4>
+                      </div>
+                      <p className="metric-value">
+                        {result?.drugEffectiveness
+                          ? `${result.drugEffectiveness}%`
+                          : "68%"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 {/* Additional Details */}
-                <div className="result-details">
-                  <h4>Simulation Details</h4>
-                  <ul>
-                    <li>
-                      <strong>Mode:</strong> {simulation?.mode || "N/A"}
-                    </li>
-                    <li>
-                      <strong>Substrate:</strong>{" "}
-                      {simulation?.substrate || "N/A"}
-                    </li>
-                    <li>
-                      <strong>Duration:</strong> {simulation?.duration || "N/A"}{" "}
-                      minutes
-                    </li>
-                    <li>
-                      <strong>Initial Tumor Count:</strong>{" "}
-                      {simulation?.tumorCount || "N/A"}
-                    </li>
-                    <li>
-                      <strong>Initial Immune Count:</strong>{" "}
-                      {simulation?.immuneCount || "N/A"}
-                    </li>
-                    <li>
-                      <strong>Status:</strong> {simulation?.status || "N/A"}
-                    </li>
-                    <li>
-                      <strong>Completed:</strong>{" "}
-                      {result?.timestamp || simulation?.createdAt || "N/A"}
-                    </li>
-                  </ul>
+                <div className="details-section">
+                  <div className="section-header">
+                    <FaFlask className="section-icon" />
+                    <h3 className="section-title">Simulation Details</h3>
+                  </div>
+                  <div className="result-details">
+                    <div className="detail-grid">
+                      <div className="detail-item">
+                        <FaFlask className="detail-icon" />
+                        <div className="detail-content">
+                          <span className="detail-label">Mode:</span>
+                          <span className="detail-value">
+                            {simulation?.mode || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="detail-item">
+                        <FaFlask className="detail-icon" />
+                        <div className="detail-content">
+                          <span className="detail-label">Substrate:</span>
+                          <span className="detail-value">
+                            {simulation?.substrate || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="detail-item">
+                        <FaClock className="detail-icon" />
+                        <div className="detail-content">
+                          <span className="detail-label">Duration:</span>
+                          <span className="detail-value">
+                            {simulation?.duration || "N/A"} minutes
+                          </span>
+                        </div>
+                      </div>
+                      <div className="detail-item">
+                        <FaVirus className="detail-icon" />
+                        <div className="detail-content">
+                          <span className="detail-label">
+                            Initial Tumor Count:
+                          </span>
+                          <span className="detail-value">
+                            {simulation?.tumorCount || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="detail-item">
+                        <FaShieldAlt className="detail-icon" />
+                        <div className="detail-content">
+                          <span className="detail-label">
+                            Initial Immune Count:
+                          </span>
+                          <span className="detail-value">
+                            {simulation?.immuneCount || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="detail-item">
+                        <FaHeartbeat className="detail-icon" />
+                        <div className="detail-content">
+                          <span className="detail-label">Status:</span>
+                          <span className="detail-value">
+                            {simulation?.status || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="detail-item">
+                        <FaCalendarAlt className="detail-icon" />
+                        <div className="detail-content">
+                          <span className="detail-label">Completed:</span>
+                          <span className="detail-value">
+                            {result?.timestamp ||
+                              simulation?.createdAt ||
+                              "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
 
             {!loading && !error && !data && (
               <div className="modal-error">
-                <p>No results available for this simulation.</p>
-                <p>
-                  The simulation may still be running or may not have completed
-                  successfully.
-                </p>
+                <FaExclamationTriangle className="error-icon" />
+                <div className="error-content">
+                  <p className="error-text">
+                    No results available for this simulation.
+                  </p>
+                  <p className="error-subtext">
+                    The simulation may still be running or may not have
+                    completed successfully.
+                  </p>
+                </div>
               </div>
             )}
           </div>
 
           <div className="modal-footer">
-            <button className="close-button" onClick={onClose}>
-              Close
+            <button className="modal-button close-button" onClick={onClose}>
+              <FaTimes className="button-icon" />
+              <span className="button-text">Close</span>
             </button>
             <button
-              className="download-button"
+              className="modal-button download-button"
               onClick={handleDownloadJSON}
               disabled={!data || loading}
             >
-              📥 Download JSON
+              <FaDownload className="button-icon" />
+              <span className="button-text">Download JSON</span>
             </button>
           </div>
         </div>

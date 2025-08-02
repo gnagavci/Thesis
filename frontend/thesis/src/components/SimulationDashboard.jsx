@@ -4,6 +4,21 @@ import { useAuth } from "../contexts/AuthContext";
 import { apiCall } from "../utils/api";
 import { usePolling } from "../hooks/usePolling";
 import SimulationResultsModal from "./SimulationResultsModal";
+import {
+  FaPlay,
+  FaPause,
+  FaPlus,
+  FaSignOutAlt,
+  FaTrashAlt,
+  FaChartLine,
+  FaSpinner,
+  FaExclamationTriangle,
+  FaRedo,
+  FaTachometerAlt,
+  FaCircle,
+} from "react-icons/fa";
+import { MdDashboard } from "react-icons/md";
+import { IoFlask } from "react-icons/io5";
 import "./SimulationDashboard.css";
 
 const SimulationDashboard = () => {
@@ -108,6 +123,7 @@ const SimulationDashboard = () => {
 
   // Add the missing handleCheckResults function
   const handleCheckResults = (simulation) => {
+    console.log("Opening modal for simulation:", simulation);
     setSelectedSimulation(simulation);
     setIsModalOpen(true);
   };
@@ -138,10 +154,12 @@ const SimulationDashboard = () => {
       <nav className="simulation-nav">
         <div className="nav-left">
           <Link to="/simulations" className="nav-link active">
-            Simulation Dashboard
+            <MdDashboard className="nav-icon" />
+            <span className="nav-text">Simulation Dashboard</span>
           </Link>
           <Link to="/simulations/new" className="nav-link create-new">
-            Create New Simulation
+            <FaPlus className="nav-icon" />
+            <span className="nav-text">Create New Simulation</span>
           </Link>
         </div>
 
@@ -150,16 +168,28 @@ const SimulationDashboard = () => {
             <button
               onClick={toggleUpdateStrategy}
               className={`update-strategy-toggle ${updateStrategy}`}
+              aria-label={`Turn live updates ${
+                updateStrategy === "polling" ? "off" : "on"
+              }`}
             >
-              {updateStrategy === "polling"
-                ? "🔄 Live Updates ON"
-                : "⏸️ Live Updates OFF"}
+              {updateStrategy === "polling" ? (
+                <>
+                  <FaPlay className="toggle-icon" />
+                  <span className="toggle-text">Live Updates ON</span>
+                </>
+              ) : (
+                <>
+                  <FaPause className="toggle-icon" />
+                  <span className="toggle-text">Live Updates OFF</span>
+                </>
+              )}
             </button>
             {updateStrategy === "polling" && (
               <select
                 value={pollingInterval}
                 onChange={(e) => setPollingInterval(Number(e.target.value))}
                 className="polling-interval-select"
+                aria-label="Select polling interval"
               >
                 <option value={2000}>2s</option>
                 <option value={5000}>5s</option>
@@ -168,9 +198,16 @@ const SimulationDashboard = () => {
               </select>
             )}
           </div>
-          <span className="user-info">Welcome, {user.username}</span>
-          <button onClick={logout} className="logout-button-nav">
-            Logout
+          <span className="user-info">
+            <span className="welcome-text">Welcome, {user.username}</span>
+          </span>
+          <button
+            onClick={logout}
+            className="logout-button-nav"
+            aria-label="Logout"
+          >
+            <FaSignOutAlt className="logout-icon" />
+            <span className="logout-text">Logout</span>
           </button>
         </div>
       </nav>
@@ -178,11 +215,14 @@ const SimulationDashboard = () => {
       {/* Page Content */}
       <div className="dashboard-content">
         <div className="dashboard-header">
-          <h1 className="page-title">My Simulations</h1>
+          <h1 className="page-title">
+            <IoFlask className="title-icon" />
+            My Simulations
+          </h1>
           {updateStrategy === "polling" && !isLoading && (
             <div className="live-indicator">
-              <span className="live-dot"></span>
-              Live Updates Active
+              <FaCircle className="live-dot" />
+              <span className="live-text">Live Updates Active</span>
             </div>
           )}
         </div>
@@ -190,7 +230,7 @@ const SimulationDashboard = () => {
         {/* Loading State */}
         {isLoading && (
           <div className="loading-container">
-            <div className="spinner"></div>
+            <FaSpinner className="spinner" />
             <p>Loading simulations...</p>
           </div>
         )}
@@ -198,8 +238,10 @@ const SimulationDashboard = () => {
         {/* Error State */}
         {displayError && !isLoading && (
           <div className="error-container">
+            <FaExclamationTriangle className="error-icon" />
             <p className="error-message">Error: {displayError}</p>
             <button onClick={manualFetch} className="retry-button">
+              <FaRedo className="retry-icon" />
               Try Again
             </button>
           </div>
@@ -208,8 +250,10 @@ const SimulationDashboard = () => {
         {/* Empty State */}
         {!isLoading && !displayError && simulations.length === 0 && (
           <div className="empty-state">
+            <IoFlask className="empty-icon" />
             <p>You haven't created any simulations yet.</p>
             <Link to="/simulations/new" className="create-first-link">
+              <FaPlus className="create-icon" />
               Create your first simulation
             </Link>
           </div>
@@ -220,33 +264,34 @@ const SimulationDashboard = () => {
           <div className="simulations-grid">
             {simulations.map((simulation) => (
               <div key={simulation.id} className="simulation-card">
-                <h3 className="simulation-name">
-                  {simulation.title || "Untitled Simulation"}
-                </h3>
+                <div className="card-header">
+                  <h3 className="simulation-name">
+                    {simulation.title || "Untitled Simulation"}
+                  </h3>
+                  <span
+                    className={`status status-${simulation.status.toLowerCase()}`}
+                  >
+                    {simulation.status}
+                  </span>
+                </div>
 
                 <div className="simulation-details">
-                  <p>
-                    <span className="label">ID:</span> {simulation.id}
-                  </p>
-                  <p>
-                    <span className="label">Mode:</span> {simulation.mode}
-                  </p>
-                  <p>
-                    <span className="label">Substrate:</span>{" "}
-                    {simulation.substrate}
-                  </p>
-                  <p>
-                    <span className="label">Running Time:</span>{" "}
-                    {simulation.duration} minutes
-                  </p>
-                  <p>
-                    <span className="label">Status:</span>
-                    <span
-                      className={`status status-${simulation.status.toLowerCase()}`}
-                    >
-                      {simulation.status}
-                    </span>
-                  </p>
+                  <div className="detail-row">
+                    <span className="label">ID:</span>
+                    <span className="value">{simulation.id}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="label">Mode:</span>
+                    <span className="value">{simulation.mode}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="label">Substrate:</span>
+                    <span className="value">{simulation.substrate}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="label">Duration:</span>
+                    <span className="value">{simulation.duration} minutes</span>
+                  </div>
                 </div>
 
                 <div className="card-actions">
@@ -255,15 +300,21 @@ const SimulationDashboard = () => {
                       handleDelete(simulation.id, simulation.title)
                     }
                     className="delete-button"
+                    aria-label={`Delete ${simulation.title || "simulation"}`}
                   >
-                    Delete
+                    <FaTrashAlt className="action-icon" />
+                    <span className="action-text">Delete</span>
                   </button>
                   <button
                     onClick={() => handleCheckResults(simulation)}
                     className="results-button"
                     disabled={simulation.status !== "Done"}
+                    aria-label={`View results for ${
+                      simulation.title || "simulation"
+                    }`}
                   >
-                    Check Results
+                    <FaChartLine className="action-icon" />
+                    <span className="action-text">Check Results</span>
                   </button>
                 </div>
               </div>
