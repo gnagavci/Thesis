@@ -1,5 +1,14 @@
-// frontend/thesis/src/components/ImportSimulationModal.jsx - UPDATED VERSION
 import { useState, useRef } from "react";
+import {
+  FaTimes,
+  FaUpload,
+  FaSpinner,
+  FaExclamationTriangle,
+  FaCheckCircle,
+  FaFileAlt,
+  FaDatabase,
+} from "react-icons/fa";
+import { IoFlask } from "react-icons/io5";
 import SimulationSchema from "../schemas/simulationSchema";
 import "./ImportSimulationModal.css";
 
@@ -162,99 +171,146 @@ function ImportSimulationModal({ isOpen, onClose, onSuccess }) {
     onClose();
   };
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Import Simulation from File</h2>
-          <button className="close-button" onClick={handleClose}>
-            ×
-          </button>
-        </div>
-
-        <div className="modal-body">
-          <div className="form-group">
-            <label htmlFor="file-input">Select JSON File:</label>
-            <input
-              id="file-input"
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleFileChange}
-              disabled={isUploading}
-              className="file-input"
-            />
-            <small className="help-text">
-              Maximum file size: 1MB. Only JSON files are accepted.
-            </small>
+    <>
+      <div className="modal-backdrop" onClick={handleBackdropClick} />
+      <div className="modal-container">
+        <div className="modal-content">
+          <div className="modal-header">
+            <div className="modal-title-section">
+              <FaUpload className="modal-title-icon" />
+              <h2 className="modal-title">Import Simulation from File</h2>
+            </div>
+            <button className="modal-close" onClick={handleClose}>
+              <FaTimes />
+            </button>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="count-input">Number of Simulations:</label>
-            <input
-              id="count-input"
-              type="number"
-              min="1"
-              max="1000"
-              value={count}
-              onChange={(e) => setCount(parseInt(e.target.value) || 1)}
-              disabled={isUploading}
-              className="count-input"
-            />
-            <small className="help-text">
-              Create multiple simulations with the same configuration (1-1000).
-            </small>
+          <div className="modal-body">
+            <div className="form-group">
+              <label htmlFor="file-input" className="form-label">
+                <FaFileAlt className="label-icon" />
+                Select JSON File:
+              </label>
+              <input
+                id="file-input"
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileChange}
+                disabled={isUploading}
+                className="file-input"
+              />
+              <small className="form-help">
+                Maximum file size: 1MB. Only JSON files are accepted.
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="count-input" className="form-label">
+                <FaDatabase className="label-icon" />
+                Number of Simulations:
+              </label>
+              <input
+                id="count-input"
+                type="number"
+                min="1"
+                max="1000"
+                value={count}
+                onChange={(e) => setCount(parseInt(e.target.value) || 1)}
+                disabled={isUploading}
+                className="count-input"
+              />
+              <small className="form-help">
+                Create multiple simulations with the same configuration
+                (1-1000).
+              </small>
+            </div>
+
+            {errors.length > 0 && (
+              <div className="error-messages">
+                <div className="error-header">
+                  <FaExclamationTriangle className="error-icon" />
+                  <h4 className="error-title">Validation Errors:</h4>
+                </div>
+                <ul className="error-list">
+                  {errors.map((error, index) => (
+                    <li key={index} className="error-item">
+                      {error}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {file && errors.length === 0 && (
+              <div className="file-preview">
+                <div className="preview-header">
+                  <FaCheckCircle className="preview-icon" />
+                  <h4 className="preview-title">File Ready for Import</h4>
+                </div>
+                <div className="preview-details">
+                  <div className="preview-item">
+                    <span className="preview-label">File:</span>
+                    <span className="preview-value">{file.name}</span>
+                  </div>
+                  <div className="preview-item">
+                    <span className="preview-label">Size:</span>
+                    <span className="preview-value">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+                  <div className="preview-item">
+                    <span className="preview-label">Will create:</span>
+                    <span className="preview-value">
+                      {count} simulation{count > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {errors.length > 0 && (
-            <div className="error-messages">
-              <h4>Validation Errors:</h4>
-              <ul>
-                {errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {file && errors.length === 0 && (
-            <div className="file-preview">
-              <p>
-                <strong>Selected file:</strong> {file.name}
-              </p>
-              <p>
-                <strong>Size:</strong> {(file.size / 1024).toFixed(1)} KB
-              </p>
-              <p>
-                <strong>Will create:</strong> {count} simulation
-                {count > 1 ? "s" : ""}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="modal-footer">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={isUploading}
-            className="cancel-button"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleUpload}
-            disabled={!file || isUploading}
-            className="upload-button"
-          >
-            {isUploading ? "Processing..." : "Import Simulations"}
-          </button>
+          <div className="modal-footer">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={isUploading}
+              className="modal-button cancel-button"
+            >
+              <FaTimes className="button-icon" />
+              <span className="button-text">Cancel</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={!file || isUploading}
+              className="modal-button upload-button"
+            >
+              {isUploading ? (
+                <>
+                  <FaSpinner className="button-icon spinner" />
+                  <span className="button-text">Processing...</span>
+                </>
+              ) : (
+                <>
+                  <FaUpload className="button-icon" />
+                  <span className="button-text">Import Simulations</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

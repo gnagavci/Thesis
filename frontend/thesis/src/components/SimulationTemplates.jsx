@@ -1,4 +1,17 @@
 import React from "react";
+import {
+  FaFlask,
+  FaCog,
+  FaRuler,
+  FaHeart,
+  FaVirus,
+  FaShieldAlt,
+  FaSeedling,
+  FaPills,
+  FaArrowsAlt,
+  FaCheckCircle,
+} from "react-icons/fa";
+import { IoFlask } from "react-icons/io5";
 import "./SimulationTemplates.css";
 
 // Define all available simulation fields that the worker actually uses
@@ -9,6 +22,7 @@ export const AVAILABLE_FIELDS = {
     default: "Untitled",
     required: false,
     category: "basic",
+    icon: "FaFlask",
   },
   mode: {
     type: "select",
@@ -17,6 +31,7 @@ export const AVAILABLE_FIELDS = {
     default: "2D",
     required: false,
     category: "basic",
+    icon: "FaCog",
   },
   substrate: {
     type: "select",
@@ -25,6 +40,7 @@ export const AVAILABLE_FIELDS = {
     default: "Oxygen",
     required: false,
     category: "basic",
+    icon: "FaFlask",
   },
   duration: {
     type: "number",
@@ -34,6 +50,7 @@ export const AVAILABLE_FIELDS = {
     max: 1440,
     required: false,
     category: "basic",
+    icon: "FaCog",
   },
   decayRate: {
     type: "number",
@@ -44,6 +61,7 @@ export const AVAILABLE_FIELDS = {
     step: 0.01,
     required: false,
     category: "rates",
+    icon: "FaHeart",
   },
   divisionRate: {
     type: "number",
@@ -54,6 +72,7 @@ export const AVAILABLE_FIELDS = {
     step: 0.01,
     required: false,
     category: "rates",
+    icon: "FaHeart",
   },
   x: {
     type: "number",
@@ -63,6 +82,7 @@ export const AVAILABLE_FIELDS = {
     max: 1000,
     required: false,
     category: "dimensions",
+    icon: "FaRuler",
   },
   y: {
     type: "number",
@@ -72,6 +92,7 @@ export const AVAILABLE_FIELDS = {
     max: 1000,
     required: false,
     category: "dimensions",
+    icon: "FaRuler",
   },
   z: {
     type: "number",
@@ -82,6 +103,7 @@ export const AVAILABLE_FIELDS = {
     required: false,
     category: "dimensions",
     dependsOn: { field: "mode", value: "3D" },
+    icon: "FaRuler",
   },
   tumorCount: {
     type: "number",
@@ -91,6 +113,7 @@ export const AVAILABLE_FIELDS = {
     max: 10000,
     required: true,
     category: "cells",
+    icon: "FaVirus",
   },
   tumorMovement: {
     type: "select",
@@ -99,6 +122,7 @@ export const AVAILABLE_FIELDS = {
     default: null,
     required: false,
     category: "cells",
+    icon: "FaArrowsAlt",
   },
   immuneCount: {
     type: "number",
@@ -108,6 +132,7 @@ export const AVAILABLE_FIELDS = {
     max: 10000,
     required: false,
     category: "cells",
+    icon: "FaShieldAlt",
   },
   immuneMovement: {
     type: "select",
@@ -116,6 +141,7 @@ export const AVAILABLE_FIELDS = {
     default: null,
     required: false,
     category: "cells",
+    icon: "FaArrowsAlt",
   },
   stemCount: {
     type: "number",
@@ -125,6 +151,7 @@ export const AVAILABLE_FIELDS = {
     max: 10000,
     required: false,
     category: "cells",
+    icon: "FaSeedling",
   },
   stemMovement: {
     type: "select",
@@ -133,6 +160,7 @@ export const AVAILABLE_FIELDS = {
     default: null,
     required: false,
     category: "cells",
+    icon: "FaArrowsAlt",
   },
   fibroblastCount: {
     type: "number",
@@ -142,6 +170,7 @@ export const AVAILABLE_FIELDS = {
     max: 10000,
     required: false,
     category: "cells",
+    icon: "FaHeart",
   },
   fibroblastMovement: {
     type: "select",
@@ -150,6 +179,7 @@ export const AVAILABLE_FIELDS = {
     default: null,
     required: false,
     category: "cells",
+    icon: "FaArrowsAlt",
   },
   drugCarrierCount: {
     type: "number",
@@ -159,6 +189,7 @@ export const AVAILABLE_FIELDS = {
     max: 10000,
     required: false,
     category: "cells",
+    icon: "FaPills",
   },
   drugCarrierMovement: {
     type: "select",
@@ -167,6 +198,7 @@ export const AVAILABLE_FIELDS = {
     default: null,
     required: false,
     category: "cells",
+    icon: "FaArrowsAlt",
   },
 };
 
@@ -174,6 +206,7 @@ export const SIMULATION_TEMPLATES = {
   basic: {
     name: "Basic",
     description: "Simple simulation with essential parameters",
+    icon: "FaFlask",
     fields: {
       title: { ...AVAILABLE_FIELDS.title, default: "Basic Simulation" },
       mode: { ...AVAILABLE_FIELDS.mode },
@@ -186,6 +219,7 @@ export const SIMULATION_TEMPLATES = {
   advanced: {
     name: "Advanced",
     description: "Comprehensive simulation with cell interactions",
+    icon: "FaCog",
     fields: {
       title: { ...AVAILABLE_FIELDS.title, default: "Advanced Simulation" },
       mode: { ...AVAILABLE_FIELDS.mode, default: "3D" },
@@ -208,6 +242,7 @@ export const SIMULATION_TEMPLATES = {
   performance: {
     name: "Performance",
     description: "High-performance simulation for benchmarking",
+    icon: "FaHeart",
     fields: {
       title: { ...AVAILABLE_FIELDS.title, default: "Performance Test" },
       mode: { ...AVAILABLE_FIELDS.mode, default: "3D" },
@@ -240,48 +275,96 @@ const SimulationTemplates = ({
   onFieldToggle,
 }) => {
   const fieldCategories = {
-    basic: "Basic Information",
-    dimensions: "Dimensions",
-    rates: "Growth Rates",
-    cells: "Cell Types",
+    basic: { name: "Basic Information", icon: FaFlask },
+    dimensions: { name: "Dimensions", icon: FaRuler },
+    rates: { name: "Growth Rates", icon: FaHeart },
+    cells: { name: "Cell Types", icon: FaVirus },
+  };
+
+  const getTemplateIcon = (templateKey) => {
+    const iconMap = {
+      FaFlask: <FaFlask />,
+      FaCog: <FaCog />,
+      FaHeart: <FaHeart />,
+    };
+
+    if (templateKey === "custom") {
+      return <FaCog />;
+    }
+
+    const template = SIMULATION_TEMPLATES[templateKey];
+    return iconMap[template?.icon] || <FaFlask />;
   };
 
   return (
     <div className="simulation-templates">
       <div className="template-selector">
-        <label htmlFor="template">Select Template</label>
-        <select
-          id="template"
-          value={selectedTemplate}
-          onChange={(e) => onTemplateChange(e.target.value)}
-          className="template-dropdown"
-        >
-          <option value="basic">Basic - Essential Parameters</option>
-          <option value="advanced">Advanced - Cell Interactions</option>
-          <option value="performance">Performance - Benchmarking</option>
-          <option value="custom">Custom - Choose Your Fields</option>
-        </select>
-      </div>
+        <div className="section-header">
+          <IoFlask className="section-icon" />
+          <h3 className="section-title">Template Selection</h3>
+        </div>
 
-      {selectedTemplate !== "custom" &&
-        SIMULATION_TEMPLATES[selectedTemplate] && (
-          <div className="template-description">
-            <p>{SIMULATION_TEMPLATES[selectedTemplate].description}</p>
-          </div>
-        )}
+        <div className="template-options">
+          {Object.entries(SIMULATION_TEMPLATES).map(([key, template]) => (
+            <label key={key} className="template-option">
+              <input
+                type="radio"
+                name="template"
+                value={key}
+                checked={selectedTemplate === key}
+                onChange={(e) => onTemplateChange(e.target.value)}
+                className="template-radio"
+              />
+              <div className="template-card">
+                <div className="template-header">
+                  {getTemplateIcon(key)}
+                  <span className="template-name">{template.name}</span>
+                </div>
+                <p className="template-description">{template.description}</p>
+              </div>
+            </label>
+          ))}
+
+          <label className="template-option">
+            <input
+              type="radio"
+              name="template"
+              value="custom"
+              checked={selectedTemplate === "custom"}
+              onChange={(e) => onTemplateChange(e.target.value)}
+              className="template-radio"
+            />
+            <div className="template-card">
+              <div className="template-header">
+                <FaCog />
+                <span className="template-name">Custom</span>
+              </div>
+              <p className="template-description">Choose your own fields</p>
+            </div>
+          </label>
+        </div>
+      </div>
 
       {selectedTemplate === "custom" && (
         <div className="custom-field-selector">
-          <h4>Select Fields for Your Custom Simulation</h4>
+          <div className="section-header">
+            <FaCog className="section-icon" />
+            <h4 className="section-title">
+              Select Fields for Your Custom Simulation
+            </h4>
+          </div>
           <p className="custom-description">
             Choose which fields you want to include. Unselected fields will use
             default values.
           </p>
 
           {Object.entries(fieldCategories).map(
-            ([categoryKey, categoryName]) => (
+            ([categoryKey, categoryInfo]) => (
               <div key={categoryKey} className="field-category">
-                <h5>{categoryName}</h5>
+                <div className="category-header">
+                  <categoryInfo.icon className="category-icon" />
+                  <h5 className="category-name">{categoryInfo.name}</h5>
+                </div>
                 <div className="field-checkboxes">
                   {Object.entries(AVAILABLE_FIELDS)
                     .filter(([_, field]) => field.category === categoryKey)
@@ -294,19 +377,27 @@ const SimulationTemplates = ({
                           }
                           onChange={() => onFieldToggle(fieldName)}
                           disabled={field.required}
+                          className="field-checkbox"
                         />
-                        <span className="field-label">
-                          {field.label}
-                          {field.required && (
-                            <span className="required">*</span>
-                          )}
-                        </span>
-                        {field.default !== null &&
-                          field.default !== undefined && (
-                            <span className="default-value">
-                              (default: {field.default})
+                        <div className="field-info">
+                          <div className="field-main">
+                            <span className="field-label">
+                              {field.label}
+                              {field.required && (
+                                <span className="required">*</span>
+                              )}
                             </span>
-                          )}
+                            {field.required && (
+                              <FaCheckCircle className="required-icon" />
+                            )}
+                          </div>
+                          {field.default !== null &&
+                            field.default !== undefined && (
+                              <span className="default-value">
+                                Default: {field.default}
+                              </span>
+                            )}
+                        </div>
                       </label>
                     ))}
                 </div>

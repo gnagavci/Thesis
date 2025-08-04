@@ -7,6 +7,18 @@ import SimulationTemplates, {
   AVAILABLE_FIELDS,
 } from "./SimulationTemplates";
 import ImportSimulationModal from "./ImportSimulationModal";
+import {
+  FaPlus,
+  FaSignOutAlt,
+  FaUpload,
+  FaSpinner,
+  FaExclamationTriangle,
+  FaCheckCircle,
+  FaTimes,
+  FaFlask,
+} from "react-icons/fa";
+import { MdDashboard } from "react-icons/md";
+import { IoFlask } from "react-icons/io5";
 import "./CreateSimulation.css";
 
 const CreateSimulation = () => {
@@ -207,6 +219,7 @@ const CreateSimulation = () => {
             value={formData[fieldName] || field.default || ""}
             onChange={handleInputChange}
             required={field.required}
+            className="form-input"
           >
             {!field.required && <option value="">None</option>}
             {field.options.map((option) => (
@@ -230,6 +243,7 @@ const CreateSimulation = () => {
             max={field.max}
             step={field.step}
             required={field.required}
+            className="form-input"
           />
         )}
       </div>
@@ -246,25 +260,33 @@ const CreateSimulation = () => {
       <nav className="simulation-nav">
         <div className="nav-left">
           <Link to="/simulations" className="nav-link">
-            Simulation Dashboard
+            <MdDashboard className="nav-icon" />
+            <span className="nav-text">Simulation Dashboard</span>
           </Link>
           <Link to="/simulations/new" className="nav-link active create-new">
-            Create New Simulation
+            <FaPlus className="nav-icon" />
+            <span className="nav-text">Create New Simulation</span>
           </Link>
         </div>
 
         <div className="nav-right">
-          <span className="user-info">Welcome, {user.username}</span>
+          <span className="user-info">
+            <span className="welcome-text">Welcome, {user.username}</span>
+          </span>
           <button onClick={logout} className="logout-button-nav">
-            Logout
+            <FaSignOutAlt className="logout-icon" />
+            <span className="logout-text">Logout</span>
           </button>
         </div>
       </nav>
 
       {/* Page Content */}
-      <div className="create-content">
-        <div className="page-header">
-          <h1 className="page-title">Create New Simulation</h1>
+      <div className="dashboard-content">
+        <div className="dashboard-header">
+          <h1 className="page-title">
+            <IoFlask className="title-icon" />
+            Create New Simulation
+          </h1>
           <div className="header-actions">
             <button
               type="button"
@@ -272,14 +294,18 @@ const CreateSimulation = () => {
               className="import-button"
               disabled={submitting}
             >
-              📁 Import from File
+              <FaUpload className="import-icon" />
+              <span className="import-text">Import from File</span>
             </button>
           </div>
         </div>
 
         {/* Import success message */}
         {importMessage && (
-          <div className="success-message import-success">{importMessage}</div>
+          <div className="message success-message">
+            <FaCheckCircle className="message-icon" />
+            <span className="message-text">{importMessage}</span>
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="simulation-form">
@@ -295,20 +321,29 @@ const CreateSimulation = () => {
 
           {/* Form Fields */}
           <div className="form-section">
-            <h3>Simulation Parameters</h3>
+            <div className="section-header">
+              <FaFlask className="section-icon" />
+              <h3 className="section-title">Simulation Parameters</h3>
+            </div>
             <div className="template-fields">
               {selectedFields.map((fieldName) => renderField(fieldName))}
             </div>
             {selectedFields.length === 0 && (
-              <p className="no-fields-message">
-                Please select fields from the template above.
-              </p>
+              <div className="empty-state">
+                <IoFlask className="empty-icon" />
+                <p className="empty-text">
+                  Please select fields from the template above.
+                </p>
+              </div>
             )}
           </div>
 
           {/* Batch Configuration */}
           <div className="form-section batch-section">
-            <h3>Batch Configuration</h3>
+            <div className="section-header">
+              <FaFlask className="section-icon" />
+              <h3 className="section-title">Batch Configuration</h3>
+            </div>
             <div className="form-group">
               <label htmlFor="numberOfSimulations">
                 Number of Simulations to Create
@@ -322,19 +357,33 @@ const CreateSimulation = () => {
                 }
                 min="1"
                 max="100"
+                className="form-input"
               />
-              <small>Create multiple identical simulations (1-100)</small>
+              <small className="form-help">
+                Create multiple identical simulations (1-100)
+              </small>
             </div>
           </div>
 
           {/* Messages */}
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+          {error && (
+            <div className="message error-message">
+              <FaExclamationTriangle className="message-icon" />
+              <span className="message-text">{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="message success-message">
+              <FaCheckCircle className="message-icon" />
+              <span className="message-text">{success}</span>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="form-actions">
             <Link to="/simulations" className="cancel-button">
-              Cancel
+              <FaTimes className="button-icon" />
+              <span className="button-text">Cancel</span>
             </Link>
             <button
               type="submit"
@@ -344,11 +393,22 @@ const CreateSimulation = () => {
                 (selectedTemplate === "custom" && selectedFields.length === 0)
               }
             >
-              {submitting
-                ? `Creating ${numberOfSimulations} simulation(s)...`
-                : `Create ${numberOfSimulations} Simulation${
-                    numberOfSimulations > 1 ? "s" : ""
-                  }`}
+              {submitting ? (
+                <>
+                  <FaSpinner className="spinner button-icon" />
+                  <span className="button-text">
+                    Creating {numberOfSimulations} simulation(s)...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <FaPlus className="button-icon" />
+                  <span className="button-text">
+                    Create {numberOfSimulations} Simulation
+                    {numberOfSimulations > 1 ? "s" : ""}
+                  </span>
+                </>
+              )}
             </button>
           </div>
         </form>
