@@ -57,7 +57,9 @@ describe("CreateSimulation Component", () => {
     expect(
       screen.getByRole("heading", { name: "Create New Simulation" })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Select Template")).toBeInTheDocument();
+
+    // Check for template selection section
+    expect(screen.getByText("Template Selection")).toBeInTheDocument();
     expect(
       screen.getByText("Number of Simulations to Create")
     ).toBeInTheDocument();
@@ -83,10 +85,9 @@ describe("CreateSimulation Component", () => {
       </CreateSimulationWrapper>
     );
 
-    const templateSelect = screen.getByLabelText("Select Template");
-
-    // Change to advanced template
-    fireEvent.change(templateSelect, { target: { value: "advanced" } });
+    // Find and click the advanced template radio button
+    const advancedRadio = screen.getByDisplayValue("advanced");
+    fireEvent.click(advancedRadio);
 
     await waitFor(() => {
       expect(
@@ -104,10 +105,9 @@ describe("CreateSimulation Component", () => {
       </CreateSimulationWrapper>
     );
 
-    const templateSelect = screen.getByLabelText("Select Template");
-
-    // Change to custom template
-    fireEvent.change(templateSelect, { target: { value: "custom" } });
+    // Find and click the custom template radio button
+    const customRadio = screen.getByDisplayValue("custom");
+    fireEvent.click(customRadio);
 
     await waitFor(() => {
       expect(
@@ -202,8 +202,8 @@ describe("CreateSimulation Component", () => {
     );
 
     // Change to custom template
-    const templateSelect = screen.getByLabelText("Select Template");
-    fireEvent.change(templateSelect, { target: { value: "custom" } });
+    const customRadio = screen.getByDisplayValue("custom");
+    fireEvent.click(customRadio);
 
     await waitFor(() => {
       const submitButton = screen.getByRole("button", {

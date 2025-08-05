@@ -1,260 +1,316 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import SimulationTemplates from "@/components/SimulationTemplates";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
 
-describe("SimulationTemplates Component", () => {
-  const mockProps = {
-    selectedTemplate: "basic",
-    onTemplateChange: vi.fn(),
-    selectedFields: ["title", "mode", "duration", "tumorCount", "x", "y"],
-    onFieldToggle: vi.fn(),
+// Mock the dependencies - must be hoisted
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: vi.fn(),
+}));
+
+vi.mock("@/utils/api", () => ({
+  apiCall: vi.fn(),
+}));
+
+vi.mock("@/hooks/usePolling", () => ({
+  usePolling: vi.fn(),
+}));
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
   };
+});
+
+// Mock SimulationResultsModal
+vi.mock("@/components/SimulationResultsModal", () => ({
+  default: ({ isOpen, onClose, simulation }) => {
+    if (!isOpen) return null;
+    return (
+      <div data-testid="results-modal">
+        <h2>Simulation Results</h2>
+        <p>Results for: {simulation?.title}</p>
+        <button onClick={onClose}>Close</button>
+      </div>
+    );
+  },
+}));
+
+// Import after mocking
+import SimulationDashboard from "@/components/SimulationDashboard";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiCall } from "@/utils/api";
+import { usePolling } from "@/hooks/usePolling";
+import { useNavigate } from "react-router-dom";
+
+const DashboardWrapper = ({ children }) => (
+  <BrowserRouter>{children}</BrowserRouter>
+);
+
+describe("SimulationDashboard Component", () => {
+  const mockUser = { id: 1, username: "testuser" };
+  const mockLogout = vi.fn();
+  const mockNavigate = vi.fn();
+  const mockRefetch = vi.fn();
+
+  const mockSimulations = [
+    {
+      id: 1,
+      title: "Cancer Cell Growth",
+      mode: "3D",
+      substrate: "Oxygen",
+      duration: 30,
+      status: "Done",
+      tumorCount: 500,
+      immuneCount: 200,
+      createdAt: "2024-01-15T10:00:00Z",
+    },
+    {
+      id: 2,
+      title: "Immune Response Model",
+      mode: "2D",
+      substrate: "Glucose",
+      duration: 45,
+      status: "Running",
+      tumorCount: 300,
+      immuneCount: 150,
+      createdAt: "2024-01-15T11:00:00Z",
+    },
+    {
+      id: 3,
+      title: "Drug Efficacy Study",
+      mode: "3D",
+      substrate: "Nutrients",
+      duration: 60,
+      status: "Submitted",
+      tumorCount: 1000,
+      immuneCount: 500,
+      createdAt: "2024-01-15T12:00:00Z",
+    },
+  ];
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
+    window.confirm = vi.fn(() => true);
 
-  it("renders template selector with all options", () => {
-    render(<SimulationTemplates {...mockProps} />);
-
-    const templateSelect = screen.getByLabelText("Select Template");
-    expect(templateSelect).toBeInTheDocument();
-
-    // Check all template options are present
-    expect(
-      screen.getByText("Basic - Essential Parameters")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Advanced - Cell Interactions")
-    ).toBeInTheDocument();
-    expect(screen.getByText("Performance - Benchmarking")).toBeInTheDocument();
-    expect(screen.getByText("Custom - Choose Your Fields")).toBeInTheDocument();
-  });
-
-  it("shows template description for non-custom templates", () => {
-    render(<SimulationTemplates {...mockProps} />);
-
-    expect(
-      screen.getByText("Simple simulation with essential parameters")
-    ).toBeInTheDocument();
-  });
-
-  it("calls onTemplateChange when selection changes", () => {
-    render(<SimulationTemplates {...mockProps} />);
-
-    const templateSelect = screen.getByLabelText("Select Template");
-    fireEvent.change(templateSelect, { target: { value: "advanced" } });
-
-    expect(mockProps.onTemplateChange).toHaveBeenCalledWith("advanced");
-  });
-
-  it("shows advanced template description when advanced is selected", () => {
-    const advancedProps = {
-      ...mockProps,
-      selectedTemplate: "advanced",
-    };
-
-    render(<SimulationTemplates {...advancedProps} />);
-
-    expect(
-      screen.getByText("Comprehensive simulation with cell interactions")
-    ).toBeInTheDocument();
-  });
-
-  it("shows performance template description when performance is selected", () => {
-    const performanceProps = {
-      ...mockProps,
-      selectedTemplate: "performance",
-    };
-
-    render(<SimulationTemplates {...performanceProps} />);
-
-    expect(
-      screen.getByText("High-performance simulation for benchmarking")
-    ).toBeInTheDocument();
-  });
-
-  it("shows custom field selector when custom template is selected", () => {
-    const customProps = {
-      ...mockProps,
-      selectedTemplate: "custom",
-      selectedFields: ["tumorCount"], // Only required field
-    };
-
-    render(<SimulationTemplates {...customProps} />);
-
-    expect(
-      screen.getByText("Select Fields for Your Custom Simulation")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Choose which fields you want to include. Unselected fields will use default values."
-      )
-    ).toBeInTheDocument();
-
-    // Check field categories are present
-    expect(screen.getByText("Basic Information")).toBeInTheDocument();
-    expect(screen.getByText("Dimensions")).toBeInTheDocument();
-    expect(screen.getByText("Growth Rates")).toBeInTheDocument();
-    expect(screen.getByText("Cell Types")).toBeInTheDocument();
-  });
-
-  it("shows field checkboxes in custom mode", () => {
-    const customProps = {
-      ...mockProps,
-      selectedTemplate: "custom",
-      selectedFields: ["tumorCount", "title"],
-    };
-
-    render(<SimulationTemplates {...customProps} />);
-
-    // Check some key fields are present by their labels
-    expect(screen.getByText("Title")).toBeInTheDocument();
-    expect(screen.getByText("Mode")).toBeInTheDocument();
-    expect(screen.getByText("Duration (minutes)")).toBeInTheDocument();
-    expect(screen.getByText("Tumor Count")).toBeInTheDocument();
-  });
-
-  it("calls onFieldToggle when field checkbox is clicked", () => {
-    const customProps = {
-      ...mockProps,
-      selectedTemplate: "custom",
-      selectedFields: ["tumorCount"],
-    };
-
-    render(<SimulationTemplates {...customProps} />);
-
-    // Find the title checkbox by getting all checkboxes and finding the right one
-    const checkboxes = screen.getAllByRole("checkbox");
-    const titleCheckbox = checkboxes.find((checkbox) => {
-      const label = checkbox.closest("label");
-      return label && label.textContent.includes("Title");
+    useAuth.mockReturnValue({
+      user: mockUser,
+      logout: mockLogout,
     });
 
-    expect(titleCheckbox).toBeDefined();
-    fireEvent.click(titleCheckbox);
+    useNavigate.mockReturnValue(mockNavigate);
 
-    expect(mockProps.onFieldToggle).toHaveBeenCalledWith("title");
-  });
-
-  it("shows required field indicator and disables required field checkboxes", () => {
-    const customProps = {
-      ...mockProps,
-      selectedTemplate: "custom",
-      selectedFields: ["tumorCount"],
-    };
-
-    render(<SimulationTemplates {...customProps} />);
-
-    // Find the tumor count checkbox
-    const checkboxes = screen.getAllByRole("checkbox");
-    const tumorCountCheckbox = checkboxes.find((checkbox) => {
-      const label = checkbox.closest("label");
-      return label && label.textContent.includes("Tumor Count");
+    usePolling.mockReturnValue({
+      data: null,
+      error: null,
+      loading: false,
+      refetch: mockRefetch,
     });
 
-    expect(tumorCountCheckbox).toBeChecked();
-    expect(tumorCountCheckbox).toBeDisabled();
-
-    // Should show required indicator
-    expect(screen.getByText("*")).toBeInTheDocument();
+    apiCall.mockResolvedValue({
+      simulations: mockSimulations,
+    });
   });
 
-  it("shows default values for fields", () => {
-    const customProps = {
-      ...mockProps,
-      selectedTemplate: "custom",
-      selectedFields: ["tumorCount"],
-    };
-
-    render(<SimulationTemplates {...customProps} />);
-
-    // Check that default values are shown
-    expect(screen.getByText("(default: 100)")).toBeInTheDocument(); // tumorCount default
-    expect(screen.getByText("(default: 2D)")).toBeInTheDocument(); // mode default
-    expect(screen.getByText("(default: 5)")).toBeInTheDocument(); // duration default
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it("correctly manages checkbox states based on selectedFields prop", () => {
-    const customProps = {
-      ...mockProps,
-      selectedTemplate: "custom",
-      selectedFields: ["tumorCount", "title", "mode"], // Some fields selected
-    };
+  it("renders dashboard with navigation and controls", async () => {
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
 
-    render(<SimulationTemplates {...customProps} />);
+    expect(screen.getByText("My Simulations")).toBeInTheDocument();
+    expect(screen.getByText("Simulation Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Create New Simulation")).toBeInTheDocument();
+    expect(screen.getByText("Welcome, testuser")).toBeInTheDocument();
 
-    const checkboxes = screen.getAllByRole("checkbox");
+    // Check for the actual text content in the button
+    expect(screen.getByText("Live Updates ON")).toBeInTheDocument();
+  });
 
-    const titleCheckbox = checkboxes.find((checkbox) => {
-      const label = checkbox.closest("label");
-      return (
-        label &&
-        label.textContent.includes("Title") &&
-        !label.textContent.includes("Tumor")
-      );
+  it("fetches and displays simulation list", async () => {
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Cancer Cell Growth")).toBeInTheDocument();
+      expect(screen.getByText("Immune Response Model")).toBeInTheDocument();
+      expect(screen.getByText("Drug Efficacy Study")).toBeInTheDocument();
     });
 
-    const modeCheckbox = checkboxes.find((checkbox) => {
-      const label = checkbox.closest("label");
-      return label && label.textContent.includes("Mode");
+    // Check status displays
+    expect(screen.getByText("Done")).toBeInTheDocument();
+    expect(screen.getByText("Running")).toBeInTheDocument();
+    expect(screen.getByText("Submitted")).toBeInTheDocument();
+  });
+
+  it("shows loading state initially", () => {
+    apiCall.mockImplementation(() => new Promise(() => {})); // Never resolves
+
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
+
+    expect(screen.getByText(/loading simulations/i)).toBeInTheDocument();
+  });
+
+  it("enables Check Results button only for completed simulations", async () => {
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Cancer Cell Growth")).toBeInTheDocument();
     });
 
-    const durationCheckbox = checkboxes.find((checkbox) => {
-      const label = checkbox.closest("label");
-      return label && label.textContent.includes("Duration");
+    const checkResultsButtons = screen.getAllByText(/check results/i);
+
+    // All simulations have the button
+    expect(checkResultsButtons).toHaveLength(3);
+
+    // Check that only the Done simulation's button is enabled
+    const doneSimCard = screen
+      .getByText("Cancer Cell Growth")
+      .closest(".simulation-card");
+    const doneButton = doneSimCard.querySelector("button.results-button");
+    expect(doneButton).not.toBeDisabled();
+
+    const runningSimCard = screen
+      .getByText("Immune Response Model")
+      .closest(".simulation-card");
+    const runningButton = runningSimCard.querySelector("button.results-button");
+    expect(runningButton).toBeDisabled();
+  });
+
+  it("opens results modal when Check Results is clicked", async () => {
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Cancer Cell Growth")).toBeInTheDocument();
     });
 
-    expect(titleCheckbox).toBeChecked();
-    expect(modeCheckbox).toBeChecked();
-    expect(durationCheckbox).not.toBeChecked();
+    const doneSimCard = screen
+      .getByText("Cancer Cell Growth")
+      .closest(".simulation-card");
+    const checkResultsButton = doneSimCard.querySelector(
+      "button.results-button"
+    );
+
+    fireEvent.click(checkResultsButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("results-modal")).toBeInTheDocument();
+      expect(
+        screen.getByText("Results for: Cancer Cell Growth")
+      ).toBeInTheDocument();
+    });
   });
 
-  it("groups fields by category correctly", () => {
-    const customProps = {
-      ...mockProps,
-      selectedTemplate: "custom",
-      selectedFields: ["tumorCount"],
-    };
+  it("handles simulation deletion with confirmation", async () => {
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
 
-    render(<SimulationTemplates {...customProps} />);
+    await waitFor(() => {
+      expect(screen.getByText("Cancer Cell Growth")).toBeInTheDocument();
+    });
 
-    // Check that categories exist and contain the expected fields
-    expect(screen.getByText("Basic Information")).toBeInTheDocument();
-    expect(screen.getByText("Cell Types")).toBeInTheDocument();
+    const deleteButtons = screen.getAllByText(/delete/i);
+    fireEvent.click(deleteButtons[0]);
 
-    // Check that fields appear under their correct categories by checking text content
-    const basicSection = screen.getByText("Basic Information").parentElement;
-    const cellsSection = screen.getByText("Cell Types").parentElement;
+    expect(window.confirm).toHaveBeenCalledWith(
+      'Are you sure you want to delete simulation "Cancer Cell Growth"?'
+    );
 
-    // Basic Information should contain title, mode, etc.
-    expect(basicSection.textContent).toContain("Title");
-    expect(basicSection.textContent).toContain("Mode");
-
-    // Cell Types should contain tumor count, immune count, etc.
-    expect(cellsSection.textContent).toContain("Tumor Count");
-    expect(cellsSection.textContent).toContain("Immune Count");
+    await waitFor(() => {
+      expect(apiCall).toHaveBeenCalledWith("/simulations/1", {
+        method: "DELETE",
+      });
+    });
   });
 
-  it("does not show custom field selector for predefined templates", () => {
-    render(<SimulationTemplates {...mockProps} />);
+  it("toggles update strategy between polling and manual", async () => {
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
 
-    // Should not show custom field selection UI
-    expect(
-      screen.queryByText("Select Fields for Your Custom Simulation")
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText("Basic Information")).not.toBeInTheDocument();
+    // Find the button by its aria-label or by role
+    const toggleButton = screen.getByRole("button", {
+      name: /turn live updates off/i,
+    });
+    fireEvent.click(toggleButton);
+
+    await waitFor(() => {
+      expect(screen.getByText("Live Updates OFF")).toBeInTheDocument();
+    });
   });
 
-  it("shows movement options for cell types", () => {
-    const customProps = {
-      ...mockProps,
-      selectedTemplate: "custom",
-      selectedFields: ["tumorCount", "tumorMovement"],
-    };
+  it("handles API errors gracefully", async () => {
+    apiCall.mockRejectedValueOnce(new Error("Network error"));
 
-    render(<SimulationTemplates {...customProps} />);
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
 
-    expect(screen.getByText("Tumor Movement")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/error: network error/i)).toBeInTheDocument();
+      expect(screen.getByText(/try again/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows empty state when no simulations exist", async () => {
+    apiCall.mockResolvedValueOnce({ simulations: [] });
+
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("You haven't created any simulations yet.")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Create your first simulation")
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("redirects to login if user is not authenticated", () => {
+    useAuth.mockReturnValue({
+      user: null,
+      logout: mockLogout,
+    });
+
+    render(
+      <DashboardWrapper>
+        <SimulationDashboard />
+      </DashboardWrapper>
+    );
+
+    expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 });

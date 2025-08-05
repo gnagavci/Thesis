@@ -129,8 +129,8 @@ describe("SimulationDashboard Component", () => {
     expect(screen.getByText("Create New Simulation")).toBeInTheDocument();
     expect(screen.getByText("Welcome, testuser")).toBeInTheDocument();
 
-    // The text "Live Updates ON" is inside a button with emoji, so let's check for the button content
-    expect(screen.getByText("🔄 Live Updates ON")).toBeInTheDocument();
+    // Check for the actual text content in the button
+    expect(screen.getByText("Live Updates ON")).toBeInTheDocument();
   });
 
   it("fetches and displays simulation list", async () => {
@@ -254,11 +254,14 @@ describe("SimulationDashboard Component", () => {
       </DashboardWrapper>
     );
 
-    const toggleButton = screen.getByText("🔄 Live Updates ON");
+    // Find the button by its aria-label or by role
+    const toggleButton = screen.getByRole("button", {
+      name: /turn live updates off/i,
+    });
     fireEvent.click(toggleButton);
 
     await waitFor(() => {
-      expect(screen.getByText("⏸️ Live Updates OFF")).toBeInTheDocument();
+      expect(screen.getByText("Live Updates OFF")).toBeInTheDocument();
     });
   });
 
