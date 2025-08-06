@@ -318,27 +318,4 @@ docker-compose -f docker-compose.test.yml up
 - **RabbitMQ data volume** for queue persistence
 - **Backup strategies** via volume mounting
 
-## Current Limitations & Known Issues
-
-### Technical Debt
-
-1. **Database naming inconsistency** - Docker uses `abm`, some configs reference `abs`
-2. **Worker service** placeholder implementation (basic simulation generation)
-3. **WebSocket implementation** incomplete (client-side ready, server-side pending)
-4. **Limited error recovery** in some edge cases
-
-### Scalability Considerations
-
-1. **Single worker instance** - needs horizontal scaling for high load
-2. **In-memory session management** - requires Redis for multi-instance deployment
-3. **File upload limitations** - local storage only, no cloud integration
-4. **Database connection limits** - may need adjustment for high concurrency
-
-### User Experience
-
-1. **Limited simulation visualization** - basic charts only
-2. **No real-time progress indicators** during simulation execution
-3. **Basic error messages** - could be more user-friendly
-4. **No simulation parameter validation** in UI (relies on backend only)
-
 This documentation provides a comprehensive overview of the ABM Simulation Platform, its architecture, features, and development practices. The system demonstrates modern web development patterns with microservices, real-time processing, and comprehensive user management capabilities.
